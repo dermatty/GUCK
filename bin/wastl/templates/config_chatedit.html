@@ -1,0 +1,21 @@
+<div class="col-sm-2">
+    {% if chatedit == "empty" %}
+       {{ telegramform.chatid_id.label }}
+    {% else %}
+       {{ telegramform.chatid_id.label }}
+       &ensp;<strong>{{ chatedit }}</strong> 
+    {% endif %}
+</div>
+<div class="col-sm-2">
+    {{ telegramform.chatid_id }}
+</div>
+<div id="chatmod" class="col-sm-1">
+    {{ telegramform.chatedit_index }}
+</div>
+<div class="col-sm-2">
+    {% if chatedit == "empty" %}
+       {{ telegramform.chatadd_t(class="btn btn-primary") }}
+    {% else %}
+        {{ telegramform.chatedit_t(class="btn btn-primary") }}
+    {% endif %}
+</div>

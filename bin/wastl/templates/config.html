@@ -1,0 +1,1065 @@
+{% extends "base.html" %}
+
+{% block repstr %}
+
+{# ALERTS #}
+{% with messages = get_flashed_messages() %}
+   {% if messages %}
+        <ul class=flashes>
+             {% for m in messages %}
+            <li class="text-danger">{{ m }}</li>
+            {% endfor %}
+        </ul>
+   {% endif %}
+{% endwith %}
+
+        <script type=text/javascript>
+
+         $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+         $(function(){
+             var a = "{{ basicform.doheartbeat.data }}";
+             if(a == "False") {
+                 $("#heartbeatdata").hide(); }
+             a = "{{ telegramform.dotelegram.data }}";
+             if(a == "False") {
+                 $("#telegramdata").hide(); }
+             a = "{{ mailform.domail.data }}";
+             if(a == "False") {
+                 $("#maildata").hide(); }
+             a = "{{ ftpform.doftp.data }}";
+             if(a == "False") {
+                 $("#ftpdata").hide(); }
+             a = "{{ smsform.dosms.data }}";
+             if(a == "False") {
+                 $("#smsdata").hide(); }
+             a = "{{ photoform.dophoto.data }}";
+             if(a == "False") {
+                 $("#photodata").hide(); }
+             a = "{{ photoform.doaiphoto.data }}";
+             if(a == "False") {
+                 $("#aiphotodata").hide(); }
+             $("#doheartbeat").click(function(){
+                 if($(this).prop("checked") == true) {
+                     $("#doheartbeatlabel").toggleClass("label-default label-primary");
+                     $("#heartbeatdata").show();
+                 } else {
+                     $("#doheartbeatlabel").toggleClass("label-primary label-default");
+                     $("#heartbeatdata").hide();
+                 };
+             });
+             $("#domail").click(function(){
+                 if($(this).prop("checked") == true) {
+                     $("#domaillabel").toggleClass("label-default label-primary");
+                     $("#maildata").show();
+                 } else {
+                     $("#domaillabel").toggleClass("label-primary label-default");
+                     $("#maildata").hide();
+                 };
+             });
+             $("#doftp").click(function(){
+                 if($(this).prop("checked") == true) {
+                     $("#doftplabel").toggleClass("label-default label-primary");
+                     $("#ftpdata").show();
+                 } else {
+                     $("#doftplabel").toggleClass("label-primary label-default");
+                     $("#ftpdata").hide();
+                 };
+             });
+             $("#dosms").click(function(){
+                 if($(this).prop("checked") == true) {
+                     $("#dosmslabel").toggleClass("label-default label-primary");
+                     $("#smsdata").show();
+                 } else {
+                     $("#dosmslabel").toggleClass("label-primary label-default");
+                     $("#smsdata").hide();
+                 };
+             });
+             $("#dophoto").click(function(){
+                 if($(this).prop("checked") == true) {
+                     $("#dophotolabel").toggleClass("label-default label-primary");
+                     $("#photodata").show();
+                 } else {
+                     $("#dophotolabel").toggleClass("label-primary label-default");
+                     $("#photodata").hide();
+                 };
+             });
+             $("#doaiphoto").click(function(){
+                 if($(this).prop("checked") == true) {
+                     $("#doaiphotolabel").toggleClass("label-default label-primary");
+                     $("#aiphotodata").show();
+                 } else {
+                     $("#doaiphotolabel").toggleClass("label-primary label-default");
+                     $("#aiphotodata").hide();
+                 };
+             });
+             
+         });
+
+         $(function(){
+             
+             $("#dotelegram").click(function(){
+                 if($(this).prop("checked") == true) {
+                     $("#dotelegramlabel").toggleClass("label-default label-primary");
+                     $("#telegramdata").show();
+                 } else {
+                     $("#dotelegramlabel").toggleClass("label-primary label-default");
+                     $("#telegramdata").hide();
+                 };
+             });
+             
+             // Function edit Chat Entry
+             $.fn.editEntry = function(idx) {
+                 $("[id^=edbu]").unbind("click");
+                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "edit", index: idx}, function(data) {
+                     var html0 = data.result;
+                     if (html0 != "") {
+                         $("#chatedit").html(html0);
+                         $("[id^=edbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             $.fn.editEntry(idx);
+                         });
+                         $("[id^=delbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             bootbox.confirm("Delete chat ID?", function(result){
+                                 if(result==true) {
+                                     $.fn.deleteEntry(idx);
+                                 }
+                             });
+                         });
+                     } else {
+                         $("[id^=edbu]").bind("click");
+                     };
+                 });
+             };
+             
+             // Function edit Camera Entry
+             $.fn.editCamEntry = function(idx) {
+                 $("[id^=camedbu]").unbind("click");
+                 $("[id^=camdelbu]").unbind("click");
+                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "camedit", index: idx}, function(data) {
+                     var html0 = data.result;
+                     if (html0 != "") {
+                         $("#camedit").html(html0);
+                         $("[id^=camenablebox]").change(function(){
+                             var idx = $(this).parent().parent().parent().parent().index();
+                             if($(this).is(":checked")) {
+                                 var ck0 = true;
+                             } else {
+                                 var ck0 = false;
+                             };
+                             $.fn.CamCheckBox(idx, ck0);
+                         });
+                         $("[id^=camedbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             $.fn.editCamEntry(idx);
+                         });
+                         $("[id^=camdelbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             bootbox.confirm("Delete camera?", function(result){
+                                 if(result==true) {
+                                     $.fn.deleteCamEntry(idx);
+                                 };
+                             });
+                         });
+                     } else {
+                         $("[id^=camedbu]").bind("click");
+                         $("[id^=camdelbu]").bind("click");
+                     };
+                 });
+             };
+
+             // delete Chat Entry
+             $.fn.deleteEntry = function(idx) {
+                 $("[id^=delbu]").unbind("click");
+                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "delete", index: idx}, function(data) {         
+                     var html0 = data.result;
+                     if(html0!="") {
+                         $("#chattablebody").html(html0);
+                         $("[id^=delbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             bootbox.confirm("Delete chat ID?", function(result){
+                                 if(result==true) {
+                                     $.fn.deleteEntry(idx);
+                                 }
+                             });
+                         });
+                         $("[id^=edbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             $.fn.editEntry(idx);
+                         });
+                     } else {
+                         $("[id^=delbu]").bind("click");
+                     };
+                 });
+             };
+
+             // delete Camera Entry
+             $.fn.deleteCamEntry = function(idx) {
+                 $("[id^=camdelbu]").unbind("click");
+                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "camdelete", index: idx}, function(data) {         
+                     var html0 = data.result;
+                     if(html0!="") {
+                         $("#camedit").html("<br><button id='camaddbu' type='button' class='btn btn-primary'>Add Camera</button>");
+                         $("#cameratablebody").html(html0);
+                         $("[id=camaddbu]").click(function(){
+                             alert("####");
+                             $.fn.CamAdd();
+                         });
+                         $("[id^=camenablebox]").change(function(){
+                             var idx = $(this).parent().parent().parent().parent().index();
+                             if($(this).is(":checked")) {
+                                 var ck0 = true;
+                             } else {
+                                 var ck0 = false;
+                             };
+                             $.fn.CamCheckBox(idx, ck0);
+                         });
+                         $("[id^=camdelbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             bootbox.confirm("Delete camera?", function(result){
+                                 if(result==true) {
+                                     $.fn.deleteCamEntry(idx);
+                                 };
+                             });
+                         });
+                         $("[id^=camedbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             $.fn.editCamEntry(idx);
+                         });
+                     } else {
+                         $("[id^=camdelbu]").bind("click");
+                     };
+                 });
+             };
+
+             // Add Camera
+             $.fn.CamAdd = function() {
+                 $("[id=camaddbu]").unbind("click");
+                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "camadd", index: 0}, function(data) {
+                     var html0 = data.result;
+                     $("#camedit").html(html0);
+                 });
+                 $("[id=camaddbu]").bind("click");
+             };
+             
+             // check Camera "enable"
+             $.fn.CamCheckBox = function(idx, ck0) {
+                 $("[id^=camenablebox]").unbind("change");
+                 var ck00 = "true";
+                 if (ck0==false) {
+                     ck00 = "false";
+                 }; 
+                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "camcheck", index: idx, check: ck00}, function(data) {
+                     var html0 = data.result;
+                     if(html0!="") {
+                         $("#camedit").html("<br><button type='button' id='camaddbu' class='btn btn-primary'>Add Camera</button>");
+                         $("#cameratablebody").html(html0);
+                         $("[id=camaddbu]").click(function(){
+                             $.fn.CamAdd();
+                         });
+                         $("[id^=camenablebox]").change(function(){
+                             var idx = $(this).parent().parent().parent().parent().index();
+                             if($(this).is(":checked")) {
+                                 var ck0 = true;
+                             } else {
+                                 var ck0 = false;
+                             };
+                             $.fn.CamCheckBox(idx, ck0);
+                         });
+                         $("[id^=camedbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             $.fn.editCamEntry(idx);
+                         });
+                         $("[id^=camdelbu]").click(function(){
+                             var idx = $(this).parent().parent().index();
+                             bootbox.confirm("Delete camera?", function(result){
+                                 if(result==true) {
+                                     $.fn.deleteCamEntry(idx);
+                                 };
+                             });
+                         });
+                     } else {
+                         $("[id^=camenablebox]").bind("change");
+                     };
+                 });
+             };
+
+             // Delete ChatID
+             $("[id^=delbu]").click(function(){
+                 var idx = $(this).parent().parent().index();
+                 bootbox.confirm("Delete chat ID?", function(result){
+                     if(result==true) {
+                         $.fn.deleteEntry(idx);
+                     }
+                 });
+             });
+
+             // Delete Camera
+             $("[id^=camdelbu]").click(function(){
+                 var idx = $(this).parent().parent().index();
+                 bootbox.confirm("Delete camera?", function(result){
+                     if(result==true) {
+                         $.fn.deleteCamEntry(idx);
+                     };
+                 });
+             });
+             
+             // Edit ChatID
+             $("[id^=edbu]").click(function(){
+                 var idx = $(this).parent().parent().index();
+                 $.fn.editEntry(idx);
+             });
+             
+             // Edit Camera
+             $("[id^=camedbu]").click(function(){
+                 var idx = $(this).parent().parent().index();
+                 $.fn.editCamEntry(idx);
+             });
+
+             // Camera enabled checkbox
+             $("[id^=camenablebox]").change(function(){
+                 var idx = $(this).parent().parent().parent().parent().index();
+                 if($(this).is(":checked")) {
+                     var ck0 = true;
+                 } else {
+                     var ck0 = false;
+                 };
+                 $.fn.CamCheckBox(idx, ck0);
+             });
+
+             // Add Camera
+             $("[id=camaddbu]").click(function(){
+                 $.fn.CamAdd();
+             });    
+         });
+         
+        </script>
+
+<div class="container-fluid">
+     <ul class="nav nav-tabs">
+         <li {% if tabchoice == "basic" %} class="active" {% endif %}><a data-toggle="tab" href="#basic">Basic Config</a></li>
+         <li {% if tabchoice == "cameras" %} class="active" {% endif %}><a data-toggle="tab" href="#cameras">Cameras</a></li>
+         <li {% if tabchoice == "telegram" %} class="active" {% endif %}><a data-toggle="tab" href="#telegram">Telegram</a></li>
+         <li {% if tabchoice == "mail" %} class="active" {% endif %}><a data-toggle="tab" href="#mail">E-Mail</a></li>
+         <li {% if tabchoice == "sms" %} class="active" {% endif %}><a data-toggle="tab" href="#sms">SMS</a></li>
+         <li {% if tabchoice == "ftp" %} class="active" {% endif %}><a data-toggle="tab" href="#ftp">FTP</a></li>
+         <li {% if tabchoice == "ai" %} class="active" {% endif %}><a data-toggle="tab" href="#ai">AI</a></li>
+         <li {% if tabchoice == "photo" %} class="active" {% endif %}><a data-toggle="tab" href="#photo">Photo</a></li>
+         <li {% if tabchoice == "remote" %} class="active" {% endif %}><a data-toggle="tab" href="#remote">Remote</a></li>
+     </ul>
+     <div class="tab-content">
+         {# ---------- BASIC CONFIG ---------- #}
+         <div id="basic" {% if tabchoice == "basic" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" action="" method="post">
+                 {{ basicform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {### GUCK_HOME ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {{ basicform.guck_home.label(class="label label-danger", style="font-size: small;") }}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.guck_home(style="width:360px;") }}
+                     </div>
+                 </div>
+                 <br>
+                 {### SHOW_FRAMES ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {{ basicform.warn_on_status.label(class="label label-primary", style="font-size: small;") }}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.warn_on_status }}
+                     </div>
+                 </div>
+                 <br>
+                 {### WARN_ON_STATUS ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {{ basicform.show_frames.label(class="label label-primary", style="font-size: small;") }}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.show_frames }}
+                     </div>
+                 </div>
+                 <br>
+                 {### LOG FPS ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {{ basicform.dologfps.label(class="label label-primary", style="font-size: small;") }}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.dologfps }}
+                     </div>
+                 </div>
+                 <br>
+                 {### HEARTBEAT ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {% if basicform.doheartbeat.data == True %}
+                         {{ basicform.doheartbeat.label(id="doheartbeatlabel", class="label label-primary", style="font-size: small;") }}
+                         {% else %}
+                         {{ basicform.doheartbeat.label(id="doheartbeatlabel", class="label label-default", style="font-size: small;") }}
+                         {% endif %}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.doheartbeat(id="doheartbeat") }}
+                     </div>
+                 </div>
+                 <br>
+                 <div id="heartbeatdata" class="row">
+                     <div class="col-sm-2">
+                         {{ basicform.heartbeat_delta.label }}
+                         {{ basicform.heartbeat_delta }}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.heartbeat_dest.label }}
+                         {{ basicform.heartbeat_dest }}
+                     </div>
+                 </div>
+                 <hr><br>
+                 {{ basicform.save(class="btn btn-primary") }}
+             </form>
+         </div>
+         {# ---------- CAMERAS ----------- #}
+         <div id="cameras" {% if tabchoice == "cameras" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ camerasform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 <table id="cameratable" class="table table-hover">
+                     <thead>
+                         <tr>
+                             <th class="text-center">Camera</th>
+                             <th class="text-center">Name</th>
+                             <th class="text-center">Enabled</th>
+                         </tr>
+                     </thead>
+                     <tbody id="cameratablebody">
+                         {% include 'config_cameraid.html' %}
+                     </tbody>
+                 </table>
+                 <hr>
+                 <div id="camedit">
+                     <br><button type='button' id='camaddbu' class='btn btn-primary'>Add Camera</button>
+                 </div>
+             </form>
+         </div>
+         {# ---------- TELEGRAM ----------- #}
+         <div id="telegram" {% if tabchoice == "telegram" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ telegramform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {###  TELEGRAM_TOKEN ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {% if telegramform.dotelegram.data == True %}
+                         {{ telegramform.dotelegram.label(id="dotelegramlabel", class="label label-primary", style="font-size: small;") }}
+                         {% else %}
+                         {{ telegramform.dotelegram.label(id="dotelegramlabel", class="label label-default", style="font-size: small;") }}
+                         {% endif %}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ telegramform.dotelegram(id="dotelegram")}}
+                     </div>
+                 </div>
+                 <br>
+                 <div id="telegramdata">
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ telegramform.telegramtoken.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ telegramform.telegramtoken(style="width:380px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     <div class="row" >
+                         <div class="col-sm-2">
+                             {{ telegramform.mode.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ telegramform.mode }}
+                         </div>
+                     </div>
+                     <br>
+                     <div class="row" >
+                         <div class="col-sm-2">
+                             {{ telegramform.maxt.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ telegramform.maxt }}
+                         </div>
+                     </div>
+                     <br>
+                     
+                     <br>
+                     <table id="chattable" class="table table-hover">
+                         <thead>
+                             <tr>
+                                 <th class="text-center">Chat</th>
+                                 <th class="text-center">ID</th>
+                                 <th class="text-center">Action</th>
+                             </tr>
+                         </thead>
+                         <tbody id="chattablebody">
+                             {% include 'config_chatid.html' %}
+                         </tbody>
+                     </table>
+                     <hr>
+                     <div class="row" id="chatedit">
+                         {% include 'config_chatedit.html' %}
+                     </div>
+                     <hr>
+                 </div> {# telegramdata #}
+                 <br>
+                 {{ telegramform.save_t(class="btn btn-primary") }}
+             </form>
+         </div>
+         {# ---------- FTP ----------- #}
+         <div id="ftp" {% if tabchoice == "ftp" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ ftpform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {###  ENABLE ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {% if ftpform.doftp.data == True %}
+                         {{ ftpform.doftp.label(id="doftplabel", class="label label-primary", style="font-size: small;") }}
+                         {% else %}
+                         {{ ftpform.doftp.label(id="doftplabel", class="label label-default", style="font-size: small;") }}
+                         {% endif %}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ ftpform.doftp(id="doftp") }}
+                     </div>
+                 </div>
+                 <br>
+                 {### FTPDATA ###}
+                 <div id="ftpdata">
+                     {### SERVER_URL ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ ftpform.server_url_f.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ ftpform.server_url_f(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### USER ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ ftpform.user_f.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ ftpform.user_f(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### PASSWORD ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ ftpform.password_f.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ ftpform.password_f(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### FTPDIR ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ ftpform.ftpdir.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ ftpform.ftpdir(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### SET_PASSIVE ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ ftpform.set_passive.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ ftpform.set_passive }}
+                         </div>
+                     </div>
+                     <br>
+                     {### SET_MAXT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ ftpform.maxt_f.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ ftpform.maxt_f }}
+                         </div>
+                     </div>
+                     <br>
+                 </div> {# ftpdata #}
+                 <hr><br>
+                 {{ ftpform.save_f(class="btn btn-primary") }}
+             </form>
+         </div>
+         {# ---------- MAIL ----------- #}
+         <div id="mail" {% if tabchoice == "mail" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ mailform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {###  ENABLE ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {% if mailform.domail.data == True %}
+                         {{ mailform.domail.label(id="domaillabel", class="label label-primary", style="font-size: small;") }}
+                         {% else %}
+                         {{ mailform.domail.label(id="domaillabel", class="label label-default", style="font-size: small;") }}
+                         {% endif %}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ mailform.domail(id="domail") }}
+                     </div>
+                 </div>
+                 <br>
+                 {### MAILDATA ###}
+                 <div id="maildata">
+                     {### SEND_FROM ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.mail_from.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.mail_from(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### SEND_TO ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.mail_to.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.mail_to(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### USER ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.user_m.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.user_m(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### PASSWORD ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.password_m.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.password_m(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### SERVER ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.server_m.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.server_m(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### PORT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.port_m.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.port_m }}
+                         </div>
+                     </div>
+                     <br>
+                     {### MAXT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.maxt_m.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.maxt_m }}
+                         </div>
+                     </div>
+                     <br>
+                     {### ONLY TEXT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ mailform.only_text.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ mailform.only_text }}
+                         </div>
+                     </div>
+                     <br>
+                 </div> {# Maildata #}
+                 <hr><br>
+                 {{ mailform.save_m(class="btn btn-primary") }}
+             </form>
+         </div>
+         {# ---------- SMS ----------- #}
+         <div id="sms" {% if tabchoice == "sms" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ smsform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {###  ENABLE ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {% if smsform.dosms.data == True %}
+                         {{ smsform.dosms.label(id="dosmslabel", class="label label-primary", style="font-size: small;") }}
+                         {% else %}
+                         {{ smsform.dosms.label(id="dosmslabel", class="label label-default", style="font-size: small;") }}
+                         {% endif %}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ smsform.dosms(id="dosms") }}
+                     </div>
+                 </div>
+                 <br>
+                 {### SMSDATA ###}
+                 <div id="smsdata">
+                     {### USER ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ smsform.user_s.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ smsform.user_s(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### HASHCODE ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ smsform.hashcode.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ smsform.hashcode(style="width:320px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### SENDER ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ smsform.sender_s.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ smsform.sender_s(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### DESTNUMBER ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ smsform.destnumber_s.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ smsform.destnumber_s(style="width:240px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### SET_MAXT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ smsform.maxt_s.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ smsform.maxt_s }}
+                         </div>
+                     </div>
+                     <br>
+                 </div> {# smsdata #}
+                 <hr><br>
+                 {{ smsform.save_s(class="btn btn-primary") }}
+             </form>
+         </div>
+
+         {# ---------- REMOTE ----------- #}
+         <div id="remote" {% if tabchoice == "remote" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ remoteform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {### REMOTE_DATA ###}
+                 <div id="remotedata">
+                     {### GUCK_PATH ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ remoteform.guck_path.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ remoteform.guck_path(style="width:360px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### REMOTE_HOST ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_host.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_host }}
+                         </div>
+                     </div>
+                     <br>
+                     {### REMOTE_HOST_SHORT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_host_short.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_host_short }}
+                         </div>
+                     </div>
+                     <br>
+                     {### REMOTE_HOST_MAC ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_host_mac.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_host_mac }}
+                         </div>
+                     </div>
+                     <br>
+                     {### INTERFACE ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ remoteform.interface.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ remoteform.interface }}
+                         </div>
+                     </div>
+                     <br>
+                     {### REMOTE_PORT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_port.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_port }}
+                         </div>
+                     </div>
+                     <br>
+                     {### REMOTE_SSH_PORT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_ssh_port.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ remoteform.remote_ssh_port }}
+                         </div>
+                     </div>
+                     <br>
+                 </div>
+                 <hr><br>
+                 {{ remoteform.save_r(class="btn btn-primary") }}
+             </form>
+         </div>
+         {# ---------- AI ----------- #}
+         <div id="ai" {% if tabchoice == "ai" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ smsform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {### AI_DATA ###}
+                 <div id="aidata">
+                     {### AI_MODE ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ aiform.ai_mode.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ aiform.ai_mode }}
+                         </div>
+                     </div>
+                     <br>
+                     {### CNN_PATH ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ aiform.cnn_path.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ aiform.cnn_path(style="width:420px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### CNN_PATH2 ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ aiform.cnn_path2.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ aiform.cnn_path2(style="width:420px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### CNN_PATH3 ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ aiform.cnn_path3.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ aiform.cnn_path3(style="width:420px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### HAAR_PATH ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ aiform.haar_path.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ aiform.haar_path(style="width:340px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### HAAR_PATH2 ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ aiform.haar_path2.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ aiform.haar_path2(style="width:340px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### AI_SENS ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ aiform.ai_sens.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ aiform.ai_sens }}
+                         </div>
+                     </div>
+                     <br>
+                 </div> {# aidata #}
+                 <hr><br>
+                 {{ aiform.save_a(class="btn btn-primary") }}
+             </form>
+         </div>
+
+         {# ---------- PHOTO ----------- #}
+         <div id="photo" {% if tabchoice == "photo" %}class="tab-pane fade in active"{% else %}class="tab-pane fade"{% endif %}>
+             <br><br>
+             <form style="border: none;" role="form" class="form-control" action="" method="post">
+                 {{ photoform.csrf_token }}
+                 <input id="tabchoice" name="tabchoice" type="hidden" value=""/>
+                 {###  ENABLE ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {% if photoform.dophoto.data == True %}
+                         {{ photoform.dophoto.label(id="dophotolabel", class="label label-primary", style="font-size: small;") }}
+                         {% else %}
+                         {{ photoform.dophoto.label(id="dophotolabel", class="label label-default", style="font-size: small;") }}
+                         {% endif %}
+                     </div>
+                     <div class="col-sm-2">
+                         {{ photoform.dophoto(id="dophoto") }}
+                     </div>
+                 </div>
+                 <br>
+                 <div id="photodata">
+                     {### APHOTODIR ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ photoform.aphotodir.label }}
+                         </div>
+                         <div id="aphotodir_data"class="col-sm-2">
+                             {{ photoform.aphotodir(style="width:420px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### MAXT ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ photoform.maxt_p.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ photoform.maxt_p }}
+                         </div>
+                     </div>
+                     <br>
+                     {### CUTOFF ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ photoform.cutoff_p.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ photoform.cutoff_p }}
+                         </div>
+                     </div>
+                     <br>
+                     {### CUTOFF_LEN ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ photoform.cutoff_len.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ photoform.cutoff_len }}
+                         </div>
+                     </div>
+                     <br>
+                 </div>
+                 {### DOAIPHOTO ###}
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {% if photoform.doaiphoto.data == True %}
+                         {{ photoform.doaiphoto.label(id="doaiphotolabel", class="label label-primary", style="font-size: small;") }}
+                         {% else %}
+                         {{ photoform.doaiphoto.label(id="doaiphotolabel", class="label label-default", style="font-size: small;") }}
+                         {% endif %}
+                      </div>
+                      <div class="col-sm-2">
+                           {{ photoform.doaiphoto(id="doaiphoto") }}
+                      </div>
+                 </div>
+                 <br>
+                 <div id="aiphotodata">
+                     {### AIPHOTODIR ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ photoform.aiphotodir.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ photoform.aiphotodir(style="width:420px;") }}
+                         </div>
+                     </div>
+                     <br>
+                     {### AI_PHOTODIR_NEG ###}
+                     <div class="row">
+                         <div class="col-sm-2">
+                             {{ photoform.aiphotodir_neg.label }}
+                         </div>
+                         <div class="col-sm-2">
+                             {{ photoform.aiphotodir_neg(style="width:420px;") }}
+                         </div>
+                     </div>
+                     <br>
+                 </div>
+                 <hr><br>
+                 {{ photoform.save_p(class="btn btn-primary") }}
+             </form>
+         </div>
+     </div> {# tab content #}
+</div> {# CONTAINER #}
+
+{% endblock %}

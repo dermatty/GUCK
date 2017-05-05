@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block repstr %}
+<script type=text/javascript>
+ $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+ $(function(){
+     var a = parseInt({{ speed*1000  }})
+     setInterval(refreshIframe,a);
+     function refreshIframe() {
+         $("#iframe1").attr("src", function(i, val) { return val; });
+     };
+ });
+</script>
+
+{% if toggle == 0 %}
+<div class="panel panel-default">
+   <div class="panel-heading" style="font-size:18px;"> 
+     <div style="text-align: center;">
+         <button type="button" class="btn btn-primary" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=1) }}'"></label>LiveCam: toggle view</button>
+     </div>
+  </div>
+  <div class="panel-body">
+      <table id="camurltable" class="table table-hover">
+          <thead>
+              <tr>
+                  <th class="text-center">Camera</th>
+                  <th class="text-center">Name</th>
+                  <th class="text-center">Choose</th>
+                  <th class="text-center">URL</th>
+              </tr>
+          </thead>
+          <tbody id="camurltablebody">
+              <form>
+              {% for camid, camname, camurl, vurl in cameralist %}
+              <tr id="gaga"> 
+                  <td class="text-center">{{ loop.index }}</td> 
+                  <td class="text-center">{{ camname }}</td>
+                  <td class="text-center">
+                      <div class="radio">
+                          <label><input id="camchangebu{{ loop.index }}" type="radio" name="optradio"{% if camnr == loop.index %}checked="checked"{% endif %} onclick="location.href='{{ url_for('livecam', camnrstr=loop.index-1, interval=speed, toggle=0) }}'"></label>
+                      </div>
+                  </td>
+                  <td class="text-center">{{ camurl }}</td>
+              </tr>
+              {% endfor %}
+              </form>
+          </tbody>
+      </table>
+      <div class="row">
+          <div class="col-sm-3">
+              <div class="dropdown">
+                  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                      {% if speed > 0 %}
+                         Interval: {{ speed }}
+                      {% else %}
+                         Streaming
+                      {% endif %}
+                      <span class="caret"></span>
+                  </button>
+                  <ul class="dropdown-menu">
+                      <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=0, toggle=0) }}">0 (stream)</a></li>
+                      <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=2, toggle=0) }}">2 sec</a></li>
+                      <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=5, toggle=0) }}">5 sec</a></li>
+                      <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=10, toggle=0) }}">10 sec</a></li>
+                      <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=30, toggle=0) }}">30 sec</a></li>
+                  </ul>
+              </div>
+          </div>
+          <div class="col-sm-1">
+              <a href="#" class="btn btn-success btn-lg" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=0, ptz=1) }}'">
+                  <span class="glyphicon glyphicon-arrow-up"></span>
+              </a>
+          </div>
+          <div class="col-sm-1">
+              <a href="#" class="btn btn-success btn-lg" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=0, ptz=2) }}'">
+                  <span class="glyphicon glyphicon-arrow-down"></span>
+              </a>
+          </div>
+          <div class="col-sm-1" >
+              <a href="#" class="btn btn-success btn-lg" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=0, ptz=3) }}'">
+                  <span class="glyphicon glyphicon-arrow-left"></span>
+              </a>
+          </div>
+          <div class="col-sm-1">
+              <a href="#" class="btn btn-success btn-lg" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=0, ptz=4) }}'">
+                  <span class="glyphicon glyphicon-arrow-right"></span>
+              </a>
+          </div>
+      </div> {# row #}
+  </div> {# panel body #}
+  <hr>
+  <div class="container" style="text-align:center;">
+      {% if speed > 0 %}       
+         <iframe id="iframe1" src={{ camurl }} frameborder="0" marginheight="0" height="800" width="640" style="overflow:hidden;"></iframe>
+      {% else %}
+         <iframe id="iframe2" src={{ videourl }} frameborder="0" marginheight="0" height="800" width="640" style="overflow:hidden;"></iframe>
+         {# <iframe name="report"style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;"> #}
+             {% endif %}
+  </div> {# container #}
+  <br><br>
+</div> {# panel #}
+{% else %}
+<div class="panel panel-default">
+    <div class="panel-heading" style="font-size:18px;"> 
+        <div style="text-align: center;">
+            <button type="button" class="btn btn-primary" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=0) }}'">LiveCam: toggle view</button>
+        </div>
+    </div>
+    <div class="panel-body">
+        <br>
+        {% if speed > 0 %}       
+        <iframe id="iframe1" src={{ camurl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;"></iframe>
+        {% else %}
+        <iframe id="iframe2" src={{ videourl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;"></iframe>
+        {% endif %}
+    </div> {# panel body #}
+    <br><br>
+</div>
+{% endif %}
+{% endblock %}
+    

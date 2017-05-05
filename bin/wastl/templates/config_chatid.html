@@ -1,0 +1,14 @@
+{% for cf in telegramform.chatidlist %}
+<tr id="gaga"> 
+    <td class="text-center">{{ loop.index }}</td> 
+    <td class="text-center">{{ cf }}</td>
+    <td class="text-center">
+        <button id="delbu{{ loop.index }}" type="button" class="btn btn-danger">
+            <span class='glyphicon glyphicon-trash'></span>
+        </button>
+        <button id="edbu{{ loop.index }}" type="button" class="btn btn-warning">
+            <span class='glyphicon glyphicon-pencil'></span>
+        </button>
+    </td>
+</tr>
+{% endfor %}

@@ -1,0 +1,158 @@
+<input type="hidden" id="act_camera_id" name="act_camera_id" value="{{ cid }}">
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.name_c.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.name_c }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.enabled.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.enabled }}
+    </div>
+</div>
+<br>
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.url_c.label }}
+    </div>
+    <div class="col-sm-3">
+        {{ camerasform.url_c(style="width:240px;") }}
+    </div>
+    <div class="col-sm-2">
+        {{ camerasform.photo_url.label }}
+    </div>
+    <div class="col-sm-3">
+        {{ camerasform.photo_url(style="width:240px;") }}
+    </div>
+</div>
+<br>
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.videofile.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.videofile }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.recordfile.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.recordfile }}
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.host_ip.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.host_ip(style="width:240px;") }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.host_venv.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.host_venv(style="width:240px;") }}
+    </div>
+</div>
+<br>
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.min_area_rect.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.min_area_rect }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.haar_scale.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.haar_scale }}
+    </div>
+</div>
+{# HOG_SCALE / HOG_THRESH #}
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.hog_scale.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.hog_scale }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.hog_thresh.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.hog_thresh }}
+    </div>
+</div>
+{# MOG2_SENS / SCANRATE #}
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.mog2_sens.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.mog2_sens }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.scanrate.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.scanrate }}
+    </div>
+</div>
+<br>
+{# REBOOT URL / PTZ_ MODE #}
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.reboot.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.reboot }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.ptz_mode.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.ptz_mode }}
+    </div>
+</div>
+{# PTZ_RIGHT / PTZ_LEFT #}
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.ptz_right.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.ptz_right }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.ptz_left.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.ptz_left }}
+    </div>
+</div>
+{# PTZ_UP / PTZ_DOWN #}
+<div class="row">
+    <div class="col-sm-2">
+       {{ camerasform.ptz_up.label }}
+    </div>
+    <div class="col-sm-3">
+       {{ camerasform.ptz_up }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.ptz_down.label }}
+    </div>
+    <div class="col-sm-2">
+       {{ camerasform.ptz_down }}
+    </div>
+</div>
+<hr>
+{% if camedit_action == "edit" %}
+   {{ camerasform.camedit_t(class="btn btn-primary") }}
+{% else %}
+    {{ camerasform.camadd_t(class="btn btn-primary") }}
+{% endif %}
+&ensp;{{ camerasform.camcancel_t(class="btn btn-default") }}
+

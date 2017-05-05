@@ -1,0 +1,21 @@
+{% for camid, camname, camenable in camerasform.cameralist %}
+<tr id="gaga"> 
+    <td class="text-center">{{ loop.index }}</td> 
+    <td class="text-center">{{ camname }}</td>
+    <td class="text-center">
+        <div class="checkbox">
+            <label><input id="camenablebox{{ loop.index }}" type="checkbox" value="" 
+                {% if camenable == True %} checked {% endif %} 
+            ></label>
+        </div>
+    </td>
+    <td class="text-center">
+        <button id="camdelbu{{ loop.index }}" type="button" class="btn btn-danger">
+            <span class='glyphicon glyphicon-trash'></span>
+        </button>
+        <button id="camedbu{{ loop.index }}" type="button" class="btn btn-warning">
+            <span class='glyphicon glyphicon-pencil'></span>
+        </button>
+    </td>
+</tr>
+{% endfor %}

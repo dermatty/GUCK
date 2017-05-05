@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set active_nav = "guck" %}
+
+{% block repstr %}
+   <div class="panel panel-default">
+     <div class="panel-heading" style="font-size:18px;">Guck System Action</div>
+       <div class="panel-body">
+         <div class="container">
+           <form>
+             <label for="sel1">Select system action (select one):</label>
+             <div class="form-inline" role="form">
+                <select class="form-control" style="width: 260px;" id="sel1">
+                  <option value='1' {% if param1 == '1' %}selected{% endif %}>Ping</option>
+                  {# onclick="location.href='{{ url_for('guck', menu1='system', param1='1') }}'" #}
+                  <option value='2' {% if param1 == '2' %}selected{% endif %}>Start</option>
+                  <option value='3' {% if param1 == '3' %}selected{% endif %}>Stop</option>
+                  <option value='4' {% if param1 == '4' %}selected{% endif %}>Restart</option>
+                  <option value='5' {% if param1 == '5' %}selected{% endif %}>Shutdown</option>
+                </select>
+                {# <span class="input-group-btn"> #}
+                  <button class="btn btn-primary" type="button" onclick="buttononclick2()">GO!</button>
+                {# </span> #}
+             </div>
+           </form>
+         </div>
+         <br>
+         <p>{{ rep0 }}</p>
+       </div>
+     </div>
+   </div>
+   <script>
+     function buttononclick2() {
+         var e = document.getElementById("sel1");
+         var p = e.options[e.selectedIndex].value;
+         window.location.href=href="/guck/system/" + p;
+     }
+     function buttononclick() {
+        var e = document.getElementById("sel1");
+        var p = e.options[e.selectedIndex].value;
+        var req = new XMLHttpRequest ( ) ;
+         req.open("get", "/guck/system/" + p) ;
+         req.onload = function ( e ) {
+            if ( req.status = 200 ) {
+                document.location.reload ( true ) ;
+            }
+         } ;
+         req.send ( );
+      }
+   </script>
+{% endblock %}

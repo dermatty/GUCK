@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block repstr %}
+   {% if menu1 == "status" %}
+     <div class="panel panel-default">
+       <div class="panel-heading" style="font-size:18px;">Guck Status</div>
+       <div class="panel-body">
+         {% for rep in replist %}
+            {% if rep|truncate(3,true,"") == "---" %}
+               <p style="font-size:16px;">{{ rep }}</p>
+            {% else %}
+               <p style="font-size:12px;">{{ rep }}</p>
+            {% endif %}
+            {% endfor %}
+       </div>
+     </div>
+   {% else %}
+      <p>Nothing to show</p>
+   {% endif %}
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block repstr %}
+ <div class="panel panel-default">
+  <div class="panel-heading" style="font-size:18px;" align="center">Guck Photo</div>
+   <div class="panel-body">
+   <div class="container">
+     <h5>Choose Camera:</h5>
+     <form>
+       {% for camnr,camname in camlist %}
+          <label class="radio-inline">
+            <input id={{ camname|e }} type="radio" {% if param1 == camnr %}checked="checked"{% endif %} onclick="location.href='{{ url_for('guck', menu1='photo', param1=camnr) }}'" name="optradio">{{ camname|e }}
+          </label>
+       {% endfor %} 
+     </form>
+   </div>
+   <div class="container">
+     <div class="row">
+       {% for p1 in pn %}
+          <div class="col-sm-12">
+               <br>
+               <img class="img-responsive" alt={{ p1 }} width="640" height="320" src="{{ url_for('static', filename=p1) }}">
+          </div>
+       {% endfor %}
+     </div>
+     <br>
+     <a href="#" class="btn btn-info btn-lg" onclick="location.href='{{ url_for('guck', menu1='photo', param1=param1) }}'">
+        <span class="glyphicon glyphicon-refresh"></span> Refresh
+     </a>
+   </div>
+   </div>
+  </div>
+ </div>
+{% endblock %}

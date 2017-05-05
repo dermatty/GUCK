@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% set active_nav = "help" %}
+
+{% block repstr %}
+     <div class="panel panel-default">
+       <div class="panel-heading" style="font-size:18px;">Guck Help</div>
+       <div class="panel-body">
+         {% for rep in replist %}
+            <p style="font-size:14px;">{{ rep }}</p>
+         {% endfor %}
+       </div>
+     </div>
+{% endblock %}
+
+
