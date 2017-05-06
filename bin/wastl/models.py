@@ -198,7 +198,7 @@ class MailForm(FlaskForm):
 
 
 class AIForm(FlaskForm):
-    ai_mode = SelectField('Number of cameras', choices=[("CNN", 'CNN'), ("CV", 'CV2')])
+    ai_mode = SelectField('AI Mode', choices=[("CNN", 'CNN'), ("CV", 'CV2')])
     cnn_path = TextField("CNN path #1", validators=[DataRequired()])
     cnn_path2 = TextField("CNN path #2", validators=[DataRequired()])
     cnn_path3 = TextField("CNN path #3", validators=[DataRequired()])
