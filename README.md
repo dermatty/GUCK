@@ -1,2 +1,2 @@
 # GUCK
-Home Surveillence in Python, using OpenCV, ExecNet, PyZMQ, Keras/Tensorflow and Flask
+Home Surveillence in Python, using OpenCV, ExecNet, PyZMQ, PyMongo, Keras/Tensorflow and Flask
