@@ -25,6 +25,7 @@ import sensors
 import psutil
 from paramiko import SSHClient
 import guckmongo
+import zenzlib
 
 SEMAPHORE_NAME = "/tpsemaphore1"
 
@@ -53,7 +54,6 @@ if _guck_home[-1] != "/":
 _guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs_neu/")
 os.environ["GUCK_HOME"] = _guck_home
 GUCK_HOME = os.environ["GUCK_HOME"]
-
 
 
 def init_telegram():
@@ -86,6 +86,7 @@ def loophandle(msg):
     global REMOTE_SSH_PORT
     global GUCK_PATH
     global REMOTE_VIRTUALENV
+    global ZENZL
     global running
     content_type, chat_type, chatid = telepot.glance(msg)
     if content_type != "text":
@@ -95,80 +96,40 @@ def loophandle(msg):
     msg0 = msg["text"].lower()
     if msg0[:2] == "g.":
         if msg0[2:] == "stop" or msg0[2:] == "shutdown":
-            hostn = REMOTE_HOST_SHORT
-            etec_cmd1 = REMOTE_VIRTUALENV + " " + GUCK_PATH + "guck.py"  # "/home/stephan/.virtualenvs/cvp0/bin/python"
-            etec_killstr2 = REMOTE_VIRTUALENV + " -u -c import sys;exec(eval(sys.stdin.readline()))"
-            etec_cmd2 = GUCK_PATH + "guck.py"
-            hoststr = etec_cmd1 + " " + etec_cmd2
-            killstr = "ssh " + hostn + " killall -9e " + "'" + etec_cmd1 + "'"
-            killstr2 = "ssh " + hostn + " killall -9e " + "'" + etec_killstr2 + "'"
+            ZENZL.killguck()
             for c in CHATIDLIST:
-                BOT.sendMessage(c, "Killing guck on " + hostn)
-            os.system(killstr)
-            os.system(killstr2)
+                BOT.sendMessage(c, "Killing guck on " + REMOTE_HOST_SHORT)
             if msg0[2:] == "shutdown":
-                hostn = REMOTE_HOST_SHORT
-                procstr = "/sbin/shutdown +0"
-                ssh = subprocess.Popen(["ssh", hostn, procstr], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
+                ZENZL.shutdown()
                 for c in CHATIDLIST:
-                    BOT.sendMessage(c, "Shutting down " + hostn)
+                    BOT.sendMessage(c, "Shutting down " + REMOTE_HOST_SHORT)
         elif msg0[2:] == "ping":
-            ssh = subprocess.Popen(["ping", "-c 1", REMOTE_HOST], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            sshres = ssh.stdout.readlines()
-            try:
-                pingstr = sshres[1].decode("utf-8")
-                BOT.sendMessage(chatid, pingstr)
-                # for c in CHATIDLIST:
-                #    BOT.sendMessage(c, pingstr)
-            except Exception as e:
-                BOT.sendMessage(chatid, "Error in ping to guck host:" + str(e))
-                # for c in CHATIDLIST:
-                #    BOT.sendMessage(c, "Error in ping to guck host:" + str(e))
+            stat, ping_rep = ZENZL.ping()
+            if stat == 0:
+                BOT.sendMessage(chatid, ping_rep)
+            else:
+                BOT.sendMessage(chatid, "Error in ping to guck host: " + ping_rep)
         elif msg0[2:] == "start" or msg0[2:] == "restart":
-            # first ping host
-            ssh = subprocess.Popen(["ping", "-c 1", REMOTE_HOST], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            sshres = ssh.stdout.readlines()
-            try:
-                pingstr = sshres[1].decode("utf-8")
-                BOT.sendMessage(chatid, pingstr)
-                # for c in CHATIDLIST:
-                #    BOT.sendMessage(c, pingstr)
-                if pingstr[-10:-1] == "reachable":
-                    # WOL
-                    ssh = subprocess.Popen(["/usr/sbin/etherwake", "-i", INTERFACE, REMOTE_HOST_MAC], shell=False,
-                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stat, ping_rep = ZENZL.ping()
+            if stat == 0:
+                BOT.sendMessage(chatid, ping_rep)
+                if ping_rep[-10:-1] == "reachable":
+                    ZENZL.lanwake()
                     for c in CHATIDLIST:
                         BOT.sendMessage(c, "Guck host down, now booting up via WOL, pls try again in 1 min ...")
                     return
-            except Exception as e:
+            else:
                 for c in CHATIDLIST:
-                    BOT.sendMessage(c, "Error in ping to guck host:" + str(e))
+                    BOT.sendMessage(c, "Error in ping to guck host:" + ping_rep)
                 return
-            hostn = REMOTE_HOST_SHORT
-            etec_cmd00 = "nohup " + GUCK_PATH + "../../scripts/startguck.sh"
-            etec_cmd1 = REMOTE_VIRTUALENV
-            etec_cmd2 = GUCK_PATH + "guck.py"
-            hoststr = etec_cmd1 + " " + etec_cmd2
-            procstr = "ps aux | grep '" + hoststr + "' | wc -l"
-            ssh = subprocess.Popen(["ssh", hostn, procstr], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            sshres = ssh.stdout.readlines()
-            try:
-                noservers = int(sshres[0].decode("utf-8"))-2
-            except:
-                noservers = 0
+            noservers = ZENZL.get_nr_instances()
             if noservers > 0:
-                killstr = "ssh " + hostn + " killall -9e " + "'" + etec_cmd1 + "'"
-                os.system(killstr)
+                ZENZL.killguck()
                 for c in CHATIDLIST:
-                    BOT.sendMessage(c, "Killing guck on " + hostn)
+                    BOT.sendMessage(c, "Killing guck on " + REMOTE_HOST_SHORT)
             try:
-                procstr = etec_cmd1 + " " + etec_cmd2
-                ssh = SSHClient()
-                ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                ssh.connect(REMOTE_HOST_SHORT, port=int(REMOTE_SSH_PORT))
-                stdin, stdout, stderr = ssh.exec_command(etec_cmd00 + " > " + GUCK_PATH + "../../log/gucklog.log 2>&1 &")
+                ZENZL.startguck()
                 logger.info("Starting guck at: " + REMOTE_HOST_SHORT)
-                logger.info(etec_cmd00 + " > " + GUCK_PATH + "../../log/gucklog.log 2>&1 &")
                 for c in CHATIDLIST:
                     BOT.sendMessage(c, "Starting Guck, hope it works ... ;-)")
             except:
@@ -255,6 +216,9 @@ if __name__ == "__main__":
     REMOTE_HOST_MAC = DB.db_query("remote", "remote_host_mac")
     INTERFACE = DB.db_query("remote", "interface")
     REMOTE_VIRTUALENV = DB.db_query("remote", "remote_virtualenv")
+
+    ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
+                            GUCK_PATH, REMOTE_VIRTUALENV)
 
     BOT = None
     init_telegram()

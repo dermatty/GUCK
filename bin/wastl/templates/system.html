@@ -12,10 +12,9 @@
                 <select class="form-control" style="width: 260px;" id="sel1">
                   <option value='1' {% if param1 == '1' %}selected{% endif %}>Ping</option>
                   {# onclick="location.href='{{ url_for('guck', menu1='system', param1='1') }}'" #}
-                  <option value='2' {% if param1 == '2' %}selected{% endif %}>Start</option>
+                  <option value='2' {% if param1 == '2' %}selected{% endif %}>(Re)Start</option>
                   <option value='3' {% if param1 == '3' %}selected{% endif %}>Stop</option>
-                  <option value='4' {% if param1 == '4' %}selected{% endif %}>Restart</option>
-                  <option value='5' {% if param1 == '5' %}selected{% endif %}>Shutdown</option>
+                  <option value='5' {% if param1 == '4' %}selected{% endif %}>Shutdown</option>
                 </select>
                 {# <span class="input-group-btn"> #}
                   <button class="btn btn-primary" type="button" onclick="buttononclick2()">GO!</button>
