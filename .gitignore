@@ -25,6 +25,17 @@ wheels/
 .installed.cfg
 *.egg
 
+# data
+*.json
+*.xml
+*.h5
+*.jpg
+*.jpeg
+*.avi
+*.h264
+*.log
+
+
 # virtualenv
 .venv
 venv/
