@@ -1,4 +1,6 @@
 #!/home/stephan/.virtualenvs/cvp0/bin/python
+import sys
+sys.path.append("../../lib")
 
 from flask import Flask, render_template, request, send_from_directory, jsonify, flash
 from bson.objectid import ObjectId
@@ -9,7 +11,7 @@ import cv2
 import time
 import requests
 import configparser
-import sys
+import guckmongo
 
 
 def request_to_guck(txt):
@@ -32,7 +34,7 @@ def request_to_guck(txt):
         return None
 
 
-# init flask 
+# init flask
 app = Flask(__name__)
 app.secret_key = "dfdsmdsv11nmDFSDfds"
 socketstate = None
@@ -41,11 +43,10 @@ CHATEDIT_INDEX = -1
 # try to get config & DB
 try:
     dbconfig = configparser.ConfigParser()
-    dbconfig.read("../../data/mongo_default/mongo_url")
+    dbconfig.read("../../data/mongo_default/mongo_url.cfg")
     dburl = dbconfig["CONFIG"]["DB_URL"].rstrip()
     dbname = dbconfig["CONFIG"]["DB_NAME"].rstrip()
-    print(">> " + dburl)
-    DB = models.ConfigDB(dburl, dbname)
+    DB = guckmongo.ConfigDB(dburl, dbname)
 except Exception as e:
     print(str(e) + ": Cannot get WASTL config for DB, exiting ...")
     sys.exit()

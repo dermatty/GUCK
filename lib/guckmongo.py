@@ -20,9 +20,9 @@ from pymongo import MongoClient
 
 
 class ConfigDB:
-    def __init__(self, mongopath):
+    def __init__(self, mongopath, mongoname):
         self.client = MongoClient(mongopath)
-        self.db = self.client.guckconfig
+        self.db = self.client[mongoname]
         self.db_basic = self.db.basic.find()[0]
 
     def db_getall(self, doc0):

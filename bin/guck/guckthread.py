@@ -1,8 +1,12 @@
+import sys
+sys.path.append("../../lib")
+
 import cv2
 import numpy as np
 import time
 import execnet
-import dill, sys, signal
+import dill
+import signal
 import pbcvt
 import os
 from random import randint

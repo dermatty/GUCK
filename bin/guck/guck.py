@@ -1,5 +1,9 @@
 #!/home/stephan/.virtualenvs/cvp0/bin/python
 
+import sys
+sys.path.append("../../lib")
+
+
 import theano
 import guckmongo
 from bson.objectid import ObjectId
@@ -24,11 +28,10 @@ import guckmsg
 import datetime
 import dill
 import time
-import sys
 import threading
 import numpy as np
 import signal
-
+import configparser
 from Sunset import Sun
 
 
@@ -36,10 +39,19 @@ __author__ = "Stephan Untergrabner"
 __license__ = "GPLv3"
 __version__ = "2.2"
 
-# Read guck path and init DB
-_db_url = "mongodb://ubuntuserver2.iv.at:27017"
+# try to get config for DB
 try:
-        _DB = guckmongo.ConfigDB(_db_url)
+    dbconfig = configparser.ConfigParser()
+    dbconfig.read("../../data/mongo_default/mongo_url.cfg")
+    dburl = dbconfig["CONFIG"]["DB_URL"].rstrip()
+    dbname = dbconfig["CONFIG"]["DB_NAME"].rstrip()
+    _DB = guckmongo.ConfigDB(dburl, dbname)
+except Exception as e:
+    print(str(e) + ": Cannot get config for mongoDB, exiting ...")
+    sys.exit()
+
+# get & set GUCK_HOME
+try:
         _guck_home = _DB.db_query("basic", "guck_home")
 except Exception as e:
         print("Mongo DB Error(" + str(e) + "), quitting ...")
@@ -304,9 +316,9 @@ class GControl:
         # photo
         self.DO_PHOTO = self.DB.db_query("photo", "enable")
         self.DO_AI_PHOTO = self.DB.db_query("photo", "enable_aiphoto")
-        self.APHOTO_DIR = self.DB.db_query("photo", "aphoto_dir")
-        self.AIPHOTO_DIR = self.DB.db_query("photo", "aiphoto_dir")
-        self.AIPHOTO_DIR_NEG = self.DB.db_query("photo", "aiphoto_dir_neg")
+        self.APHOTO_DIR = os.environ["GUCK_HOME"] + self.DB.db_query("photo", "aphoto_dir")
+        self.AIPHOTO_DIR = os.environ["GUCK_HOME"] + self.DB.db_query("photo", "aiphoto_dir")
+        self.AIPHOTO_DIR_NEG = os.environ["GUCK_HOME"] + self.DB.db_query("photo", "aiphoto_dir_neg")
         self.MAXT_DETECTPHOTO = self.DB.db_query("photo", "maxt")
         self.LASTPHOTO = None
         self.PHOTO_CUTOFF = self.DB.db_query("photo", "cutoff")
@@ -314,15 +326,15 @@ class GControl:
 
         # AI
         taimode = self.AI_MODE = self.DB.db_query("ai", "ai_mode")
-        self.CNN_PATH = self.DB.db_query("ai", "cnn_path")
-        self.CNN_PATH2 = self.DB.db_query("ai", "cnn_path2")
-        self.CNN_PATH3 = self.DB.db_query("ai", "cnn_path3")
+        self.CNN_PATH = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "cnn_path")
+        self.CNN_PATH2 = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "cnn_path2")
+        self.CNN_PATH3 = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "cnn_path3")
         self.CNNMODEL = None
         self.CNNMODEL2 = None
         self.CNNMODEL3 = None
         self.AI_SENS = self.DB.db_query("ai", "ai_sens")
-        thaarpath = self.HAAR_PATH = self.DB.db_query("ai", "haar_path")
-        thaarpath2 = self.HAAR_PATH2 = self.DB.db_query("ai", "haar_path2")
+        thaarpath = self.HAAR_PATH = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "haar_path")
+        thaarpath2 = self.HAAR_PATH2 = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "haar_path2")
         self.LASTAIPHOTO = None
         self.AIC = None
         self.AIDATA = []
@@ -360,8 +372,8 @@ class GControl:
             tgateway = "N/A"
             tstatus = "N/A"
             tinputmode = "camera"   # hardcoded: change to "video" for testing
-            tvideofile = cn["videofile"]
-            trecordfile = cn["recordfile"]
+            tvideofile = os.environ["GUCK_HOME"] + cn["videofile"]
+            trecordfile = os.environ["GUCK_HOME"] + cn["recordfile"]
             tcamurl = cn["url"]
             tcamname = cn["name"]
             thostip = cn["host_ip"]

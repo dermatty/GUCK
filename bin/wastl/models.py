@@ -1,4 +1,3 @@
-from pymongo import MongoClient
 from bson.objectid import ObjectId
 
 from flask_wtf import FlaskForm
@@ -374,54 +373,3 @@ class CamerasForm(FlaskForm):
         db.db_update2("cameras", "_id", id0, "ptz_down", self.ptz_down.data)
         db.db_update2("cameras", "_id", id0, "reboot", self.reboot.data)
         db.db_update2("cameras", "_id", id0, "photo_url", self.photo_url.data)
-
-
-class ConfigDB:
-    def __init__(self, mongopath, mongoname):
-        self.client = MongoClient(mongopath)
-        self.db = self.client[mongoname]
-        self.db_basic = self.db.basic.find()[0]
-
-    def db_getall(self, doc0):
-        return self.db[doc0].find()
-
-    def db_delete_one(self, doc0, name, value):
-        try:
-            result = self.db[doc0].delete_many({name: value})
-            return result
-        except Exception as e:
-            print("DB delete error:", e)
-            return -1
-
-    def db_open_one(self, doc0, template):
-        result = self.db[doc0].insert_one(template)
-        return result.inserted_id
-
-    def db_find_one(self, doc0, name, value):
-        return self.db[doc0].find_one({name: value})
-
-    def db_query(self, doc0, name, index=0):
-        try:
-            return self.db[doc0].find()[index][name]
-        except Exception as e:
-            print("DB Query error: ", e)
-            return -1
-
-    def db_update2(self, doc0, selector_name, selector_value, name, value):
-        try:
-            result = self.db[doc0].update_one({selector_name: selector_value}, {"$set":  {name: value}})
-            return result
-        except Exception as e:
-            print("DB update error:", e)
-            return -1
-
-    def db_update(self, doc0, name, value, index=0):
-        try:
-            id0 = self.db_query(doc0, "_id")
-            result = self.db[doc0].update_one({"_id": id0}, {"$set":  {name: value}})
-            return result
-        except Exception as e:
-            print("DB update error:", e)
-            return -1
-
-
