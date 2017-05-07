@@ -14,12 +14,11 @@ import configparser
 import guckmongo
 
 
-def request_to_guck(txt):
-    port = "5558"
+def request_to_guck(txt, url="etec.iv.at", port="5558"):
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.setsockopt(zmq.LINGER, 0)
-    socket.connect("tcp://localhost:%s" % port)
+    socket.connect("tcp://" + url + ":" + port)
     socket.RCVTIMEO = 1000
     socket.send_string(txt)
     try:
