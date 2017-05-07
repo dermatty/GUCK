@@ -94,7 +94,6 @@ def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
         if ptz0 != 0 and len(cameralist)-1 >= camnr:
             cursor = DB.db_getall("cameras")
             ptzlist = [(cn["_id"], cn["ptz_up"], cn["ptz_down"], cn["ptz_left"], cn["ptz_right"]) for cn in cursor]
-            print(">>>>", ptzlist, camnr)
             _, ptz_up, ptz_down, ptz_left, ptz_right = ptzlist[camnr]
             ptzcommand = ""
             if ptz0 == 1:

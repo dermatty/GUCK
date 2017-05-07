@@ -85,6 +85,7 @@ def loophandle(msg):
     global REMOTE_HOST_SHORT
     global REMOTE_SSH_PORT
     global GUCK_PATH
+    global REMOTE_VIRTUALENV
     global running
     content_type, chat_type, chatid = telepot.glance(msg)
     if content_type != "text":
@@ -95,13 +96,16 @@ def loophandle(msg):
     if msg0[:2] == "g.":
         if msg0[2:] == "stop" or msg0[2:] == "shutdown":
             hostn = REMOTE_HOST_SHORT
-            etec_cmd1 = "/home/stephan/.virtualenvs/cvp0/bin/python"
+            etec_cmd1 = REMOTE_VIRTUALENV + " " + GUCK_PATH + "guck.py"  # "/home/stephan/.virtualenvs/cvp0/bin/python"
+            etec_killstr2 = REMOTE_VIRTUALENV + " -u -c import sys;exec(eval(sys.stdin.readline()))"
             etec_cmd2 = GUCK_PATH + "guck.py"
             hoststr = etec_cmd1 + " " + etec_cmd2
             killstr = "ssh " + hostn + " killall -9e " + "'" + etec_cmd1 + "'"
+            killstr2 = "ssh " + hostn + " killall -9e " + "'" + etec_killstr2 + "'"
             for c in CHATIDLIST:
                 BOT.sendMessage(c, "Killing guck on " + hostn)
             os.system(killstr)
+            os.system(killstr2)
             if msg0[2:] == "shutdown":
                 hostn = REMOTE_HOST_SHORT
                 procstr = "/sbin/shutdown +0"
@@ -141,7 +145,7 @@ def loophandle(msg):
                     BOT.sendMessage(c, "Error in ping to guck host:" + str(e))
                 return
             hostn = REMOTE_HOST_SHORT
-            etec_cmd00 = "nohup " + GUCK_PATH + "startguck.sh"
+            etec_cmd00 = "nohup " + GUCK_PATH + "../../scripts/startguck.sh"
             etec_cmd1 = REMOTE_VIRTUALENV
             etec_cmd2 = GUCK_PATH + "guck.py"
             hoststr = etec_cmd1 + " " + etec_cmd2
