@@ -1,0 +1,2 @@
+guck data folder, mostly not added to git
+
