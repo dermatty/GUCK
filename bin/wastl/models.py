@@ -131,6 +131,7 @@ class SMSForm(FlaskForm):
 
 class RemoteForm(FlaskForm):
     guck_path = TextField("Path to GUCK", validators=[DataRequired()])
+    remote_virtualenv = TextField("Remote Host VEnv", validators=[DataRequired()])
     remote_host = TextField("Remote Host IP", validators=[DataRequired()])
     remote_host_short = TextField("Remote Host Shortname", validators=[DataRequired()])
     remote_host_mac = TextField("Remote Host MAC", validators=[DataRequired()])
@@ -144,6 +145,7 @@ class RemoteForm(FlaskForm):
     def populateform(self, db):
         self.guck_path.data = db.db_query("remote", "guck_path")
         self.remote_host.data = db.db_query("remote", "remote_host")
+        self.remote_virtualenv.data = db.db_query("remote", "remote_virtualenv")
         self.remote_host_short.data = db.db_query("remote", "remote_host_short")
         self.remote_host_mac.data = db.db_query("remote", "remote_host_mac")
         self.interface.data = db.db_query("remote", "interface")
@@ -153,11 +155,12 @@ class RemoteForm(FlaskForm):
     def updatedb(self, db):
         db.db_update("remote", "guck_path", self.guck_path.data)
         db.db_update("remote", "remote_host", self.remote_host.data)
+        db.db_update("remote", "remote_virtualenv", self.remote_virtualenv.data)
         db.db_update("remote", "remote_host_short", self.remote_host_short.data)
         db.db_update("remote", "remote_host_mac", self.remote_host_mac.data)
         db.db_update("remote", "interface", self.interface.data)
-        db.db_update("remote", "remote_port", self.remote_port.data)
-        db.db_update("remote", "remote_ssh_port", self.remote_ssh_port.data)
+        db.db_update("remote", "remote_port", str(self.remote_port.data))
+        db.db_update("remote", "remote_ssh_port", str(self.remote_ssh_port.data))
 
 
 class MailForm(FlaskForm):

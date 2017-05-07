@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import queue, cv2, requests, posix_ipc
 import telepot , sensors, logging
+import os
 
 ALARM_BREAK = False
 ALARM_QUIT = False
@@ -37,7 +38,7 @@ def getstatus(shmlist, recording, alarmrunning):
         global HCLIMIT
         global NIGHTMODE
         ret = "------- General -------"
-        ret += "\nVersion: 2.2"
+        ret += "\nVersion: " + os.environ["GUCK_VERSION"]
         ret += "\nRecording: "
         ret += "YES" if recording else "NO"
         ret += "\nPaused: "

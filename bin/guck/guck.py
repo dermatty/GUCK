@@ -37,7 +37,7 @@ from Sunset import Sun
 
 __author__ = "Stephan Untergrabner"
 __license__ = "GPLv3"
-__version__ = "2.2"
+__version__ = "2.3 - git master"
 
 # try to get config for DB
 try:
