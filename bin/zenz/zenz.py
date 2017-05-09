@@ -111,30 +111,27 @@ def loophandle(msg):
                 BOT.sendMessage(chatid, "Error in ping to guck host: " + ping_rep)
         elif msg0[2:] == "start" or msg0[2:] == "restart":
             stat, ping_rep = ZENZL.ping()
-            if stat == 0:
-                BOT.sendMessage(chatid, ping_rep)
-                if ping_rep[-10:-1] == "reachable":
-                    ZENZL.lanwake()
-                    for c in CHATIDLIST:
-                        BOT.sendMessage(c, "Guck host down, now booting up via WOL, pls try again in 1 min ...")
-                    return
-            else:
-                for c in CHATIDLIST:
-                    BOT.sendMessage(c, "Error in ping to guck host:" + ping_rep)
+            if stat == 0 and ping_rep[0:8] != "64 bytes":
+                ZENZL.lanwake()
+                BOT.sendMessage(chatid, "Guck host down, now booting up via WOL, pls try again in 1 min ...")
                 return
-            noservers = ZENZL.get_nr_instances()
-            if noservers > 0:
-                ZENZL.killguck()
-                for c in CHATIDLIST:
-                    BOT.sendMessage(c, "Killing guck on " + REMOTE_HOST_SHORT)
-            try:
-                ZENZL.startguck()
-                logger.info("Starting guck at: " + REMOTE_HOST_SHORT)
-                for c in CHATIDLIST:
-                    BOT.sendMessage(c, "Starting Guck, hope it works ... ;-)")
-            except:
-                for c in CHATIDLIST:
-                    BOT.sendMessage(c, "Error in guck start up, possibly no ssh access to guck host ... ?")
+            elif stat == 0:
+                noservers = ZENZL.get_nr_instances()
+                if noservers > 0:
+                    ZENZL.killguck()
+                    for c in CHATIDLIST:
+                        BOT.sendMessage(c, "Killing guck on " + REMOTE_HOST_SHORT)
+                try:
+                    ZENZL.startguck()
+                    logger.info("Starting guck at: " + REMOTE_HOST_SHORT)
+                    for c in CHATIDLIST:
+                        BOT.sendMessage(c, "Starting Guck, hope it works ... ;-)")
+                except Exception as e:
+                    for c in CHATIDLIST:
+                        BOT.sendMessage(c, "Error in guck start up: " + str(e))
+            else:
+                BOT.sendMessage(chatid, "Error in ping to guck host:" + ping_rep)
+                return
         else:
             res = sendtext_toGuck(msg0[2:], chatid, REMOTE_HOST, REMOTE_PORT)
     elif msg0[:4] == "bot.":

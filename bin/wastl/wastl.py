@@ -198,23 +198,22 @@ def guck(menu1, param1):
         # (re)start
         elif param1 == "2":
             stat, ping_rep = ZENZL.ping()
-            if stat == 0:
-                if ping_rep[-10:-1] == "reachable":
-                    ZENZL.lanwake()
-                    rep0 = "Guck host down, now booting up via WOL, pls try again in 1 min ..."
-                else:
-                    noservers = ZENZL.get_nr_instances()
-                    if noservers > 0:
-                        ZENZL.killguck()
-                        rep0 = "Killing guck on " + REMOTE_HOST_SHORT
-                    try:
-                        ZENZL.startguck()
-                        rep0 += "\nStarting guck at: " + REMOTE_HOST_SHORT
-                    except Exception as e:
-                        rep0 = str(e)
-                        # rep0 += "\nError in guck start up, possibly no ssh access to guck host ... ?"
+            if stat == 0 and ping_rep[0:8] != "64 bytes":
+                ZENZL.lanwake()
+                rep0 = "Guck host down, now booting up via WOL, pls try again in 1 min ..."
+            elif stat == 0:
+                noservers = ZENZL.get_nr_instances()
+                if noservers > 0:
+                    ZENZL.killguck()
+                    rep0 = "Killing guck on " + REMOTE_HOST_SHORT
+                try:
+                    ZENZL.startguck()
+                    rep0 += "\nStarting guck at: " + REMOTE_HOST_SHORT
+                except Exception as e:
+                    rep0 = str(e)
+                    # rep0 += "\nError in guck start up, possibly no ssh access to guck host ... ?"
             else:
-                rep0 = "Error in ping to guck host:" + ping_rep
+                rep0 = "Error in ping to guck host: " + ping_rep
         # stop/shutdown
         elif param1 == "3" or param1 == "4":
             ZENZL.killguck()
