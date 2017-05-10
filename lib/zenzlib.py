@@ -32,11 +32,27 @@ class ZenzLib:
         return ssh
 
     def ping(self):
-        ssh = subprocess.Popen(["ping", "-c 1", self.REMOTE_HOST], shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # return:  status, pingstr
+        #     status:    1 ... host alive,
+        #                0 ... down,
+        #                -1 ... error in ping
+        #     pingstr:   "etec.iv.at alive", "etec.iv.at down"
+        ssh = subprocess.Popen(["ping", "-c 1", "-w 1", self.REMOTE_HOST], shell=False, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
         sshres = ssh.stdout.readlines()
         try:
-            pingstr = sshres[1].decode("utf-8")
-            return 0, pingstr
+            pingstr1 = sshres[1].decode("utf-8")
+            pingstr2 = sshres[2].decode("utf-8")
+            if pingstr2[0:3] == "---":
+                pingstr = self.REMOTE_HOST + " down!"
+                stat = 0
+            elif pingstr1[0:8] == "64 bytes":
+                pingstr = self.REMOTE_HOST + " alive: " + pingstr1
+                stat = 1
+            else:
+                stat = 0
+                pingstr = self.REMOTE_HOST + " down!"
+            return stat, pingstr
         except Exception as e:
             return -1, str(e)
 

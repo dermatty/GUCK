@@ -105,17 +105,18 @@ def loophandle(msg):
                     BOT.sendMessage(c, "Shutting down " + REMOTE_HOST_SHORT)
         elif msg0[2:] == "ping":
             stat, ping_rep = ZENZL.ping()
-            if stat == 0:
+            if stat == 0 or stat == 1:
                 BOT.sendMessage(chatid, ping_rep)
             else:
                 BOT.sendMessage(chatid, "Error in ping to guck host: " + ping_rep)
         elif msg0[2:] == "start" or msg0[2:] == "restart":
             stat, ping_rep = ZENZL.ping()
-            if stat == 0 and ping_rep[0:8] != "64 bytes":
+            if stat == 0:
                 ZENZL.lanwake()
+                BOT.sendMessage(chatid, ping_rep)
                 BOT.sendMessage(chatid, "Guck host down, now booting up via WOL, pls try again in 1 min ...")
                 return
-            elif stat == 0:
+            elif stat == 1:
                 noservers = ZENZL.get_nr_instances()
                 if noservers > 0:
                     ZENZL.killguck()

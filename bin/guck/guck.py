@@ -368,40 +368,42 @@ class GControl:
         i = 0
         for cn in cursor:
             tenable = cn["enable"]
-            tchannel = "N/A"
-            tgateway = "N/A"
-            tstatus = "N/A"
-            tinputmode = "camera"   # hardcoded: change to "video" for testing
-            tvideofile = os.environ["GUCK_HOME"] + cn["videofile"]
-            trecordfile = os.environ["GUCK_HOME"] + cn["recordfile"]
-            tcamurl = cn["url"]
-            tcamname = cn["name"]
-            thostip = cn["host_ip"]
-            thostvenv = cn["host_venv"]
-            tminarearect = int(cn["min_area_rect"])
-            thaarscale = float(cn["haarscale"])
-            thogscale = float(cn["hog_scale"])
-            thogthresh = float(cn["hog_thresh"])
-            tscanrate = int(cn["scanrate"])
-            treboot = cn["reboot"]
-            tmog2sens = int(cn["mog2_sensitivity"])
-            self.MOGSENS[i] = tmog2sens
-            self.REBOOT[i] = treboot
-            tptzm = cn["ptz_mode"]
-            tptzr = cn["ptz_mode"]
-            tptzl = cn["ptz_mode"]
-            tptzu = cn["ptz_mode"]
-            tptzd = cn["ptz_mode"]
-            self.PTZ[i] = (tptzm, tptzr, tptzl, tptzu, tptzd)
-            try:
-                self.CAMERADATA.append(CameraDataClass(tenable, tchannel, tgateway, tstatus, tinputmode, tvideofile, trecordfile,
-                                                       tcamurl, tcamname, thostip, thostvenv, tminarearect, thaarpath, thaarpath2,
-                                                       thaarscale, thogscale, thogthresh, tscanrate, tptzm, tptzr, tptzl, tptzu,
-                                                       tptzd, treboot, tmog2sens, taimode))
-            except:
-                logger.error("Wrong keys/data for camera" + str(i + 1) + ", exiting ...")
-                sys.exit()
-            i += 1
+            if tenable:
+                tchannel = "N/A"
+                tgateway = "N/A"
+                tstatus = "N/A"
+                tinputmode = "camera"   # hardcoded: change to "video" for testing
+                tvideofile = os.environ["GUCK_HOME"] + cn["videofile"]
+                trecordfile = os.environ["GUCK_HOME"] + cn["recordfile"]
+                tcamurl = cn["url"]
+                tcamname = cn["name"]
+                thostip = cn["host_ip"]
+                thostvenv = cn["host_venv"]
+                tminarearect = int(cn["min_area_rect"])
+                thaarscale = float(cn["haarscale"])
+                thogscale = float(cn["hog_scale"])
+                thogthresh = float(cn["hog_thresh"])
+                tscanrate = int(cn["scanrate"])
+                treboot = cn["reboot"]
+                tmog2sens = int(cn["mog2_sensitivity"])
+                self.MOGSENS[i] = tmog2sens
+                self.REBOOT[i] = treboot
+                tptzm = cn["ptz_mode"]
+                tptzr = cn["ptz_mode"]
+                tptzl = cn["ptz_mode"]
+                tptzu = cn["ptz_mode"]
+                tptzd = cn["ptz_mode"]
+                self.PTZ[i] = (tptzm, tptzr, tptzl, tptzu, tptzd)
+                try:
+                    self.CAMERADATA.append(CameraDataClass(tenable, tchannel, tgateway, tstatus, tinputmode,
+                                                           tvideofile, trecordfile, tcamurl, tcamname,
+                                                           thostip, thostvenv, tminarearect, thaarpath, thaarpath2,
+                                                           thaarscale, thogscale, thogthresh, tscanrate, tptzm,
+                                                           tptzr, tptzl, tptzu, tptzd, treboot, tmog2sens, taimode))
+                except:
+                    logger.error("Wrong keys/data for camera" + str(i + 1) + ", exiting ...")
+                    sys.exit()
+                i += 1
         self.NR_CAMERAS = i - 1
 
         # init pyzmq server for ssh remote query ("gq")
@@ -842,185 +844,184 @@ class GControl:
 
             # processing loop: draw detections, send messages
             for i in range(len(self.CAMERADATA)):
-                if not self.CAMERADATA[i].ENABLE:
-                    continue
-                camname, frame0, ctstatus, objlist, tx0 = camlist[i]
-                if self.CAMERADATA[i].STATUS == 2 and camname is not None:
-                    shmlist[i] = camlist[i]
-                    frame0copy = frame0.copy()
-                    humancount = len([o for o in objlist if o[2] > self.HCLIMIT])
-                    # Draw detection
-                    for o in objlist:
-                        o_id, o_rect, o_class_ai, _ = o
-                        if o_class_ai >= self.HCLIMIT:
-                            x, y, w, h = o_rect
-                            outstr = "{:.1f}".format(o_class_ai) + " : " + "HUMAN"
-                            cv2.rectangle(frame0, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                            cv2.putText(frame0, outstr, (x + 3, y+h-10), cv2.FONT_HERSHEY_DUPLEX, 0.3, (0, 255, 0))
-                     # output
-                    tstr = time.strftime("%a, %d %b %H:%M:%S", time.localtime(tx0))
-
-                    self.CAMERADATA[i].TSLIST.append(time.time())
-                    if len(self.CAMERADATA[i].TSLIST) > 30:
-                        del self.CAMERADATA[i].TSLIST[0]
-                    if len(self.CAMERADATA[i].TSLIST) > 1:
-                        a = [self.CAMERADATA[i].TSLIST[j+1]-self.CAMERADATA[i].TSLIST[j]
-                             for j in range(0, len(self.CAMERADATA[i].TSLIST)-1)]
-                        fps = 1/(sum(a)/len(a))
-                    else:
-                        fps = 0
-                    outstr = tstr + " : " + str(int(fps)) + " fps"
-                    self.SSHSERVER.set_fps(camname, fps)
-                    cv2.putText(frame0, outstr, (5, 20), cv2.FONT_HERSHEY_DUPLEX, 0.3, (0, 255, 0))
-
-                    # log
-                    if humancount >= self.HCLIMIT and time.time()-self.LASTLOG >= 10:
-                        logger.info(camname + " / " + tstr + ": HUMAN detected!")
-                        self.LASTLOG = time.time()
-                    # ftp
-                    if (humancount >= self.HCLIMIT) and self.DO_FTP and time.time()-self.LASTFTP >= self.FTP_MAXT:
-                            self.LASTFTP = time.time()
-                            tm = time.strftime("%a, %d %b %Y %H:%M:%S")
-                            photoname = "guck" + tm + ".jpg"
-                            cv2.imwrite("alarmphoto.jpg", frame0)
-                            self.SENDMSG.sendphoto("ftp", photoname, "alarmphoto.jpg")
-                            logger.info("FTP uploaded!")
-                    # mail
-                    if (humancount >= self.HCLIMIT) and self.DO_MAIL and time.time()-self.LASTMAIL >= self.MAXT_MAIL:
-                            self.LASTMAIL = time.time()
-                            res0 = str(humancount) + " humans(s) detected!"
-                            if self.MAIL_ONLYTEXT:
-                                self.SENDMSG.sendtext("smtp", res0, "Pls see FTP or Telegram for photos ...", None)
-                            else:
-                                cv2.imwrite("alarmphoto.jpg", frame0)
-                                self.SENDMSG.sendphoto("smtp", res0, "alarmphoto.jpg", None)
-                            # rr = self.MAIL.sendmail("GUCK - Object detected!", res0)
-                            logger.info("Mail sent!")
-                    # SMS
-                    if (humancount >= self.HCLIMIT) and self.DO_SMS and time.time()-self.LASTSMS >= self.SMS_MAXTSMS:
-                            self.LASTSMS = time.time()
-                            res0 = str(humancount) + " human(s) detected!"
-                            data = urllib.parse.urlencode({'username': self.SMS_USER, 'hash': self.SMS_HASHCODE,
-                                                           'numbers': self.SMS_DESTNUMBER, 'message': res0,
-                                                           'sender': self.SMS_SENDER})
-                            data = data.encode('utf-8')
-                            request = urllib.request.Request("http://api.txtlocal.com/send/?")
-                            f = urllib.request.urlopen(request, data)
-                            logger.info("SMS sent!")
-
-                    # Telegram system critical
-                    if (time.time() - self.LASTCRIT) > 60 and self.DO_CRIT and self.DO_TELEGRAM and self.TELEGRAMBOT:
-                        answ, mem_crit, cpu_crit, gpu_crit, cam_crit = guckmsg.getstatus(shmlist, self.SSHSERVER.recording(),
-                                                                                         self.SSHSERVER.alarmrunning())
-                        logger.info("System status: MEM - " + str(mem_crit) + "; CPU - " + str(cpu_crit) + "; GPU - "
-                                    + str(gpu_crit) + "; CAMS - " + str(cam_crit))
-                        self.LASTCRIT = time.time()
-                        if mem_crit or cpu_crit or gpu_crit or cam_crit:
-                            self.SENDMSG.sendtext("telegram", None, answ, None)
-
-                    # Telegram
-                    if (humancount >= self.HCLIMIT) and self.DO_TELEGRAM and self.TELEGRAMBOT and\
-                       self.TELEGRAM_MODE == "verbose" and tx0-self.LASTTELEGRAM >= self.MAXT_TELEGRAM:
-                            cv2.imwrite("alarmphoto.jpg", frame0)
-                            msg = str(humancount) + " human(s) detected!"
-                            self.SENDMSG.sendtext("telegram", None, msg, None)
-                            self.SENDMSG.sendphoto("telegram", None, "alarmphoto.jpg", None)
-                            tm = time.strftime("%a, %d %b %Y %H:%M:%S")
-                            logger.info("Telegramm msg. sent at " + tm)
-                            self.LASTTELEGRAM = tx0    # time.time()
-
-                    # photo
-                    if (humancount >= self.HCLIMIT) and self.DO_PHOTO and time.time()-self.LASTPHOTO >= self.MAXT_DETECTPHOTO:
-                        tm = time.strftime("%a, %d %b %Y %H:%M:%S")
-                        photoname = self.APHOTO_DIR + "/AP" + tm + ".jpg"
-                        try:
-                            cv2.imwrite(photoname, frame0)
-                            logger.info("Photo saved @ " + tm)
-                            if self.PHOTO_CUTOFF:
-                                if len(os.listdir(str(self.APHOTO_DIR))) > self.PHOTO_CUTOFF_LEN:
-                                    oldest = self.APHOTO_DIR + "/" + min(os.listdir(str(self.APHOTO_DIR)), key=lambda
-                                                                         f: os.path.getctime(self.APHOTO_DIR + "/" + f))
-                                    os.remove(oldest)
-                                    logging.info("Photo removed: " + oldest)
-                        except Exception as e:
-                            logger.error("Cannot save photo: " + str(e))
-                            self.DO_PHOTO = False
-                        self.LASTPHOTO = time.time()
-                    # ai_photo
-                    if self.DO_AI_PHOTO and time.time() - self.LASTAIPHOTO > 2:
-                        tm = time.strftime("%a, %d %b %Y %H:%M:%S")
-                        frame_height = frame0copy.shape[0]
-                        frame_width = frame0copy.shape[1]
-                        # print(frame_height, frame_width)
-                        new_w = 128
-                        new_h = 128
-                        # if detection -> resize/crop detection to 128 x 128
-                        j = 1
+                if self.CAMERADATA[i].ENABLE:
+                    camname, frame0, ctstatus, objlist, tx0 = camlist[i]
+                    if self.CAMERADATA[i].STATUS == 2 and camname is not None:
+                        shmlist[i] = camlist[i]
+                        frame0copy = frame0.copy()
+                        humancount = len([o for o in objlist if o[2] > self.HCLIMIT])
+                        # Draw detection
                         for o in objlist:
-                                o_id, o_rect, o_class_ai, _ = o
+                            o_id, o_rect, o_class_ai, _ = o
+                            if o_class_ai >= self.HCLIMIT:
                                 x, y, w, h = o_rect
-                                if w == max(w, h):
-                                        if y + w > frame_height:
-                                            y0 = y
-                                            y = y - (y + w - frame_height)
-                                            if y < 0:
-                                                img = cv2.resize(frame0copy[y0:y0+h, x:x+w], (new_w, new_h))
-                                            else:
-                                                img = cv2.resize(frame0copy[y:y+w, x:x+w], (new_w, new_h))
-                                        else:
-                                            img = cv2.resize(frame0copy[y:y+w, x:x+w], (new_w, new_h))
-                                else:
-                                        if x + h > frame_width:
-                                            x0 = x
-                                            x = x - (x + h - frame_width)
-                                            if x < 0:
-                                                img = cv2.resize(frame0copy[y:y+h, x0:x0+w], (new_w, new_h))
-                                            else:
-                                                img = cv2.resize(frame0copy[y:y+h, x:x+w], (new_w, new_h))
-                                        else:
-                                            img = cv2.resize(frame0copy[y:y+h, x:x+w], (new_w, new_h))
-                                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                                photoname = None
-                                if o_class_ai >= self.HCLIMIT:
-                                    photoname = self.AIPHOTO_DIR + "/AP" + str(j) + tm + ".jpg"
-                                elif o_class_ai == 0:
-                                    photoname = self.AIPHOTO_DIR_NEG + "/AP" + str(j) + tm + ".jpg"
-                                if photoname:
-                                    try:
-                                        cv2.imwrite(photoname, img)
-                                    except Exception as e:
-                                        logger.error("Cannot save ai photo: " + str(e))
-                                        self.DO_AI_PHOTO = False
-                                    self.LASTAIPHOTO = time.time()
-                                    j += 1
+                                outstr = "{:.1f}".format(o_class_ai) + " : " + "HUMAN"
+                                cv2.rectangle(frame0, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                                cv2.putText(frame0, outstr, (x + 3, y+h-10), cv2.FONT_HERSHEY_DUPLEX, 0.3, (0, 255, 0))
+                         # output
+                        tstr = time.strftime("%a, %d %b %H:%M:%S", time.localtime(tx0))
 
-                    # recording
-                    try:
-                        if self.SSHSERVER.recording() and self.CAMERADATA[i].DO_RECORD:
-                            self.CAMERADATA[i].OUTVIDEO.write(frame0)
-                            pass
-                    except AttributeError:
-                        logger.warning("Cannot write video frame for camera " + str(i) + ", disabling recording ...")
-                        self.CAMERADATA[i].DO_RECORD = False
-
-                    if self.SHOW_FRAMES:
-                        cv2.imshow(camname, frame0)
-
-                    # fps logging every min
-                    if self.DO_LOGFPS and time.time() - self.LASTPROC > 60:
-                        fpslist = []
-                        ret = "Processing @ "
-                        for i in range(len(self.CAMERADATA)):
+                        self.CAMERADATA[i].TSLIST.append(time.time())
+                        if len(self.CAMERADATA[i].TSLIST) > 30:
+                            del self.CAMERADATA[i].TSLIST[0]
+                        if len(self.CAMERADATA[i].TSLIST) > 1:
                             a = [self.CAMERADATA[i].TSLIST[j+1]-self.CAMERADATA[i].TSLIST[j]
                                  for j in range(0, len(self.CAMERADATA[i].TSLIST)-1)]
                             fps = 1/(sum(a)/len(a))
-                            fpslist.append(fps)
-                            if i < len(self.CAMERADATA) - 1:
-                                ret += "{0:4.1f}".format(fps) + "/ "
-                            else:
-                                ret += "{0:4.1f}".format(fps) + "fps"
-                        self.LASTPROC = time.time()
-                        logger.info(ret)
+                        else:
+                            fps = 0
+                        outstr = tstr + " : " + str(int(fps)) + " fps"
+                        self.SSHSERVER.set_fps(camname, fps)
+                        cv2.putText(frame0, outstr, (5, 20), cv2.FONT_HERSHEY_DUPLEX, 0.3, (0, 255, 0))
+
+                        # log
+                        if humancount >= self.HCLIMIT and time.time()-self.LASTLOG >= 10:
+                            logger.info(camname + " / " + tstr + ": HUMAN detected!")
+                            self.LASTLOG = time.time()
+                        # ftp
+                        if (humancount >= self.HCLIMIT) and self.DO_FTP and time.time()-self.LASTFTP >= self.FTP_MAXT:
+                                self.LASTFTP = time.time()
+                                tm = time.strftime("%a, %d %b %Y %H:%M:%S")
+                                photoname = "guck" + tm + ".jpg"
+                                cv2.imwrite("alarmphoto.jpg", frame0)
+                                self.SENDMSG.sendphoto("ftp", photoname, "alarmphoto.jpg")
+                                logger.info("FTP uploaded!")
+                        # mail
+                        if (humancount >= self.HCLIMIT) and self.DO_MAIL and time.time()-self.LASTMAIL >= self.MAXT_MAIL:
+                                self.LASTMAIL = time.time()
+                                res0 = str(humancount) + " humans(s) detected!"
+                                if self.MAIL_ONLYTEXT:
+                                    self.SENDMSG.sendtext("smtp", res0, "Pls see FTP or Telegram for photos ...", None)
+                                else:
+                                    cv2.imwrite("alarmphoto.jpg", frame0)
+                                    self.SENDMSG.sendphoto("smtp", res0, "alarmphoto.jpg", None)
+                                # rr = self.MAIL.sendmail("GUCK - Object detected!", res0)
+                                logger.info("Mail sent!")
+                        # SMS
+                        if (humancount >= self.HCLIMIT) and self.DO_SMS and time.time()-self.LASTSMS >= self.SMS_MAXTSMS:
+                                self.LASTSMS = time.time()
+                                res0 = str(humancount) + " human(s) detected!"
+                                data = urllib.parse.urlencode({'username': self.SMS_USER, 'hash': self.SMS_HASHCODE,
+                                                               'numbers': self.SMS_DESTNUMBER, 'message': res0,
+                                                               'sender': self.SMS_SENDER})
+                                data = data.encode('utf-8')
+                                request = urllib.request.Request("http://api.txtlocal.com/send/?")
+                                f = urllib.request.urlopen(request, data)
+                                logger.info("SMS sent!")
+
+                        # Telegram system critical
+                        if (time.time() - self.LASTCRIT) > 60 and self.DO_CRIT and self.DO_TELEGRAM and self.TELEGRAMBOT:
+                            answ, mem_crit, cpu_crit, gpu_crit, cam_crit = guckmsg.getstatus(shmlist, self.SSHSERVER.recording(),
+                                                                                             self.SSHSERVER.alarmrunning())
+                            logger.info("System status: MEM - " + str(mem_crit) + "; CPU - " + str(cpu_crit) + "; GPU - "
+                                        + str(gpu_crit) + "; CAMS - " + str(cam_crit))
+                            self.LASTCRIT = time.time()
+                            if mem_crit or cpu_crit or gpu_crit or cam_crit:
+                                self.SENDMSG.sendtext("telegram", None, answ, None)
+
+                        # Telegram
+                        if (humancount >= self.HCLIMIT) and self.DO_TELEGRAM and self.TELEGRAMBOT and\
+                           self.TELEGRAM_MODE == "verbose" and tx0-self.LASTTELEGRAM >= self.MAXT_TELEGRAM:
+                                cv2.imwrite("alarmphoto.jpg", frame0)
+                                msg = str(humancount) + " human(s) detected!"
+                                self.SENDMSG.sendtext("telegram", None, msg, None)
+                                self.SENDMSG.sendphoto("telegram", None, "alarmphoto.jpg", None)
+                                tm = time.strftime("%a, %d %b %Y %H:%M:%S")
+                                logger.info("Telegramm msg. sent at " + tm)
+                                self.LASTTELEGRAM = tx0    # time.time()
+
+                        # photo
+                        if (humancount >= self.HCLIMIT) and self.DO_PHOTO and time.time()-self.LASTPHOTO >= self.MAXT_DETECTPHOTO:
+                            tm = time.strftime("%a, %d %b %Y %H:%M:%S")
+                            photoname = self.APHOTO_DIR + "/AP" + tm + ".jpg"
+                            try:
+                                cv2.imwrite(photoname, frame0)
+                                logger.info("Photo saved @ " + tm)
+                                if self.PHOTO_CUTOFF:
+                                    if len(os.listdir(str(self.APHOTO_DIR))) > self.PHOTO_CUTOFF_LEN:
+                                        oldest = self.APHOTO_DIR + "/" + min(os.listdir(str(self.APHOTO_DIR)), key=lambda
+                                                                             f: os.path.getctime(self.APHOTO_DIR + "/" + f))
+                                        os.remove(oldest)
+                                        logging.info("Photo removed: " + oldest)
+                            except Exception as e:
+                                logger.error("Cannot save photo: " + str(e))
+                                self.DO_PHOTO = False
+                            self.LASTPHOTO = time.time()
+                        # ai_photo
+                        if self.DO_AI_PHOTO and time.time() - self.LASTAIPHOTO > 2:
+                            tm = time.strftime("%a, %d %b %Y %H:%M:%S")
+                            frame_height = frame0copy.shape[0]
+                            frame_width = frame0copy.shape[1]
+                            # print(frame_height, frame_width)
+                            new_w = 128
+                            new_h = 128
+                            # if detection -> resize/crop detection to 128 x 128
+                            j = 1
+                            for o in objlist:
+                                    o_id, o_rect, o_class_ai, _ = o
+                                    x, y, w, h = o_rect
+                                    if w == max(w, h):
+                                            if y + w > frame_height:
+                                                y0 = y
+                                                y = y - (y + w - frame_height)
+                                                if y < 0:
+                                                    img = cv2.resize(frame0copy[y0:y0+h, x:x+w], (new_w, new_h))
+                                                else:
+                                                    img = cv2.resize(frame0copy[y:y+w, x:x+w], (new_w, new_h))
+                                            else:
+                                                img = cv2.resize(frame0copy[y:y+w, x:x+w], (new_w, new_h))
+                                    else:
+                                            if x + h > frame_width:
+                                                x0 = x
+                                                x = x - (x + h - frame_width)
+                                                if x < 0:
+                                                    img = cv2.resize(frame0copy[y:y+h, x0:x0+w], (new_w, new_h))
+                                                else:
+                                                    img = cv2.resize(frame0copy[y:y+h, x:x+w], (new_w, new_h))
+                                            else:
+                                                img = cv2.resize(frame0copy[y:y+h, x:x+w], (new_w, new_h))
+                                    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                                    photoname = None
+                                    if o_class_ai >= self.HCLIMIT:
+                                        photoname = self.AIPHOTO_DIR + "/AP" + str(j) + tm + ".jpg"
+                                    elif o_class_ai == 0:
+                                        photoname = self.AIPHOTO_DIR_NEG + "/AP" + str(j) + tm + ".jpg"
+                                    if photoname:
+                                        try:
+                                            cv2.imwrite(photoname, img)
+                                        except Exception as e:
+                                            logger.error("Cannot save ai photo: " + str(e))
+                                            self.DO_AI_PHOTO = False
+                                        self.LASTAIPHOTO = time.time()
+                                        j += 1
+
+                        # recording
+                        try:
+                            if self.SSHSERVER.recording() and self.CAMERADATA[i].DO_RECORD:
+                                self.CAMERADATA[i].OUTVIDEO.write(frame0)
+                                pass
+                        except AttributeError:
+                            logger.warning("Cannot write video frame for camera " + str(i) + ", disabling recording ...")
+                            self.CAMERADATA[i].DO_RECORD = False
+
+                        if self.SHOW_FRAMES:
+                            cv2.imshow(camname, frame0)
+
+                        # fps logging every min
+                        if self.DO_LOGFPS and time.time() - self.LASTPROC > 60:
+                            fpslist = []
+                            ret = "Processing @ "
+                            for i in range(len(self.CAMERADATA)):
+                                a = [self.CAMERADATA[i].TSLIST[j+1]-self.CAMERADATA[i].TSLIST[j]
+                                     for j in range(0, len(self.CAMERADATA[i].TSLIST)-1)]
+                                fps = 1/(sum(a)/len(a))
+                                fpslist.append(fps)
+                                if i < len(self.CAMERADATA) - 1:
+                                    ret += "{0:4.1f}".format(fps) + "/ "
+                                else:
+                                    ret += "{0:4.1f}".format(fps) + "fps"
+                            self.LASTPROC = time.time()
+                            logger.info(ret)
 
             ch = cv2.waitKey(1) & 0xFF
             if ch == 27 or ch == ord("q"):
@@ -1043,7 +1044,6 @@ class GControl:
 
 if __name__ == "__main__":
 
-    __version__ = "2.2"
     gc = GControl(_DB)
 
     # start threads

@@ -9,10 +9,10 @@
          var d = Math.random();
          $("#iframe1").attr("src", "{{ camurl }}#e" + d);
      }, a);
-     // setInterval(refreshIframe,a);
-     //function refreshIframe() {
-     //    $("#iframe1").attr("src", function(i, val) { return val; });
-     //};
+     setInterval(refreshIframe,a);
+     function refreshIframe() {
+         $("#iframe0").attr("src", function(i, val) { return val; });
+     };
  });
 </script>
 
@@ -113,7 +113,7 @@
     <div class="panel-body">
         <br>
         {% if speed > 0 %}       
-        <iframe id="iframe1" src={{ camurl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;"></iframe>
+        <iframe id="iframe0" src={{ camurl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;"></iframe>
         {% else %}
         <iframe id="iframe2" src={{ videourl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;"></iframe>
         {% endif %}

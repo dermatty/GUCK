@@ -189,41 +189,45 @@ def guck(menu1, param1):
         ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
                                 GUCK_PATH, REMOTE_VIRTUALENV)
         # rep0 = "selection " + param1 + " not implemented yet!"
-        # ping 
-        rep0 = ""
+        # ping
+        rep0 = []
         if param1 == "1":
-            stat, rep0 = ZENZL.ping()
+            stat, rep = ZENZL.ping()
             if stat == -1:
-                rep0 = "Error in ping to guck host: " + str(rep0)
+                rep0.append("Error in ping to guck host: " + str(rep))
+            else:
+                rep0.append(rep)
         # (re)start
         elif param1 == "2":
-            stat, ping_rep = ZENZL.ping()
-            if stat == 0 and ping_rep[0:8] != "64 bytes":
-                ZENZL.lanwake()
-                rep0 = "Guck host down, now booting up via WOL, pls try again in 1 min ..."
-            elif stat == 0:
+            stat, rep = ZENZL.ping()
+            if stat == 0:
+                #ZENZL.lanwake()
+                rep0.append(rep)
+                rep0.append("Guck host down, now booting up via WOL, pls try again in 1 min ...")
+            elif stat == 1:
                 noservers = ZENZL.get_nr_instances()
                 if noservers > 0:
                     ZENZL.killguck()
-                    rep0 = "Killing guck on " + REMOTE_HOST_SHORT
+                    rep0.append(rep)
+                    rep0.append("Killing guck on " + REMOTE_HOST_SHORT)
                 try:
                     ZENZL.startguck()
-                    rep0 += "\nStarting guck at: " + REMOTE_HOST_SHORT
+                    rep0.append("Starting guck at: " + REMOTE_HOST_SHORT)
                 except Exception as e:
-                    rep0 = str(e)
+                    rep0.append(str(e))
                     # rep0 += "\nError in guck start up, possibly no ssh access to guck host ... ?"
             else:
-                rep0 = "Error in ping to guck host: " + ping_rep
+                rep0.append("Error in ping to guck host: " + rep)
         # stop/shutdown
         elif param1 == "3" or param1 == "4":
             ZENZL.killguck()
             if param1 == "3":
-                rep0 = "Killing guck on " + REMOTE_HOST_SHORT
+                rep0.append("Killing guck on " + REMOTE_HOST_SHORT)
             if param1 == "4":
                 ZENZL.shutdown()
-                rep0 += "Killing guck, shutting down " + REMOTE_HOST_SHORT
+                rep0.append("Killing guck, shutting down " + REMOTE_HOST_SHORT)
         elif param1 == "0":
-            rep0 = ""
+            rep0 = []
             param1 = "1"
         return render_template("system.html", rep0=rep0, param1=param1, menu1=menu1)
     elif menu1 == "help":
