@@ -14,26 +14,6 @@ import configparser
 import guckmongo
 import zenzlib
 
-
-def request_to_guck(txt, url="etec.iv.at", port="5558"):
-    context = zmq.Context()
-    socket = context.socket(zmq.REQ)
-    socket.setsockopt(zmq.LINGER, 0)
-    socket.connect("tcp://" + url + ":" + port)
-    socket.RCVTIMEO = 1000
-    socket.send_string(txt)
-    try:
-        res0 = socket.recv_pyobj()
-        socket.close()
-        context.term()
-        return res0
-    except zmq.ZMQError as e:
-        socket.close()
-        context.term()
-        time.sleep(0.1)
-        return None
-
-
 # init flask
 app = Flask(__name__)
 app.secret_key = "dfdsmdsv11nmDFSDfds"
@@ -130,6 +110,17 @@ def guck(menu1, param1):
     global socket
     global socketstate
     global DB
+    if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status":
+        GUCK_PATH = DB.db_query("remote", "guck_path")
+        REMOTE_HOST = DB.db_query("remote", "remote_host")
+        REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
+        REMOTE_PORT = DB.db_query("remote", "remote_port")
+        REMOTE_SSH_PORT = DB.db_query("remote", "remote_ssh_port")
+        REMOTE_HOST_MAC = DB.db_query("remote", "remote_host_mac")
+        INTERFACE = DB.db_query("remote", "interface")
+        REMOTE_VIRTUALENV = DB.db_query("remote", "remote_virtualenv")
+        ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
+                                GUCK_PATH, REMOTE_VIRTUALENV)
 
     if menu1 == "photo":
         camlist = []
@@ -150,10 +141,12 @@ def guck(menu1, param1):
         # loop over all cameras and save photos as .jpg
         j = 1
         camsok = True
+        REMOTE_HOST = DB.db_query("remote", "remote_host")
+        REMOTE_PORT = DB.db_query("remote", "remote_port")
         for photoindex in range(lowerbound, upperbound + 1):
             sstr = "photo " + str(photoindex)
-            res0 = request_to_guck(sstr)
-            if res0 is not None:
+            ok, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
+            if ok:
                 rep0, repname, repfr = res0
                 # save new .jpg
                 tm = time.strftime("%a%d%b%Y%H:%M:%S")
@@ -178,17 +171,6 @@ def guck(menu1, param1):
             camlist.append((str(i), "ALL CAMERAS"))
         return render_template("photo.html", camlist=camlist, pn=pn, param1=param1, menu1=menu1)
     elif menu1 == "system":
-        GUCK_PATH = DB.db_query("remote", "guck_path")
-        REMOTE_HOST = DB.db_query("remote", "remote_host")
-        REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
-        REMOTE_PORT = DB.db_query("remote", "remote_port")
-        REMOTE_SSH_PORT = DB.db_query("remote", "remote_ssh_port")
-        REMOTE_HOST_MAC = DB.db_query("remote", "remote_host_mac")
-        INTERFACE = DB.db_query("remote", "interface")
-        REMOTE_VIRTUALENV = DB.db_query("remote", "remote_virtualenv")
-        ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
-                                GUCK_PATH, REMOTE_VIRTUALENV)
-        # rep0 = "selection " + param1 + " not implemented yet!"
         # ping
         rep0 = []
         if param1 == "1":
@@ -201,7 +183,7 @@ def guck(menu1, param1):
         elif param1 == "2":
             stat, rep = ZENZL.ping()
             if stat == 0:
-                #ZENZL.lanwake()
+                ZENZL.lanwake()
                 rep0.append(rep)
                 rep0.append("Guck host down, now booting up via WOL, pls try again in 1 min ...")
             elif stat == 1:
@@ -219,13 +201,32 @@ def guck(menu1, param1):
             else:
                 rep0.append("Error in ping to guck host: " + rep)
         # stop/shutdown
-        elif param1 == "3" or param1 == "4":
+        elif param1 == "3" or param1 == "11":
             ZENZL.killguck()
             if param1 == "3":
                 rep0.append("Killing guck on " + REMOTE_HOST_SHORT)
-            if param1 == "4":
+            if param1 == "10":
                 ZENZL.shutdown()
                 rep0.append("Killing guck, shutting down " + REMOTE_HOST_SHORT)
+        elif param1 in ["4", "5", "6", "7", "8", "9"]:
+            if param1 == "4":
+                sstr = "pause"
+            elif param1 == "5":
+                sstr = "resume"
+            elif param1 == "6":
+                sstr = "quit"
+            elif param1 == "7":
+                sstr = "record start"
+            elif param1 == "8":
+                sstr = "record stop"
+            elif param1 == "9":
+                sstr = "clear"
+            stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
+            if stat:
+                rep, repname, repfr = res0
+                rep0.append(rep)
+            else:
+                rep0.append(res0)
         elif param1 == "0":
             rep0 = []
             param1 = "1"
@@ -233,20 +234,20 @@ def guck(menu1, param1):
     elif menu1 == "help":
         # check connection to iotserver
         sstr = "help"
-        res0 = request_to_guck(sstr)
-        if res0 is not None:
+        stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
+        if stat:
             rep0, repname, repfr = res0
         else:
-            rep0 = "GUCK CONNECTION ERROR"
+            rep0 = res0
         replist = rep0.split("\n")
         return render_template("help.html", replist=replist, menu1=menu1)
     elif menu1 == "status":
         sstr = "status"
-        res0 = request_to_guck(sstr)
-        if res0 is not None:
+        stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
+        if stat:
             rep0, repname, repfr = res0
         else:
-            rep0 = "GUCK CONNECTION ERROR"
+            rep0 = res0
         replist = rep0.split("\n")
         return render_template("status.html", replist=replist, menu1=menu1)
     elif menu1 == "config":

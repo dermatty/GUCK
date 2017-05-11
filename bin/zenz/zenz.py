@@ -136,6 +136,7 @@ def loophandle(msg):
         else:
             res = sendtext_toGuck(msg0[2:], chatid, REMOTE_HOST, REMOTE_PORT)
     elif msg0[:4] == "bot.":
+        print(msg0)
         if msg0[4:] == "exit":
             SEMAPHORE.acquire()
             running = False
@@ -218,6 +219,8 @@ if __name__ == "__main__":
     ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
                             GUCK_PATH, REMOTE_VIRTUALENV)
 
+    print("------")
+            
     BOT = None
     init_telegram()
     if BOT is None:

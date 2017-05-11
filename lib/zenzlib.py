@@ -2,6 +2,8 @@ import os
 import subprocess
 from paramiko import SSHClient
 import paramiko
+import zmq
+import time
 
 
 class ZenzLib:
@@ -15,6 +17,24 @@ class ZenzLib:
         self.REMOTE_SSH_PORT = remote_ssh_port
         self.GUCK_PATH = guck_path
         self.REMOTE_VIRTUALENV = remote_virtualenv
+
+    def request_to_guck(self, txt, url="etec.iv.at", port="5558"):
+        context = zmq.Context()
+        socket = context.socket(zmq.REQ)
+        socket.setsockopt(zmq.LINGER, 0)
+        socket.connect("tcp://" + url + ":" + port)
+        socket.RCVTIMEO = 1000
+        socket.send_string(txt)
+        try:
+            res0 = socket.recv_pyobj()
+            socket.close()
+            context.term()
+            return True, res0
+        except zmq.ZMQError as e:
+            socket.close()
+            context.term()
+            time.sleep(0.1)
+            return False, "GUCK connection error: " + str(e)
 
     def killguck(self):
         hostn = self.REMOTE_HOST_SHORT

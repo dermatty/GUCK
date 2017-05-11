@@ -14,7 +14,13 @@
                   {# onclick="location.href='{{ url_for('guck', menu1='system', param1='1') }}'" #}
                   <option value='2' {% if param1 == '2' %}selected{% endif %}>(Re)Start</option>
                   <option value='3' {% if param1 == '3' %}selected{% endif %}>Stop</option>
-                  <option value='5' {% if param1 == '4' %}selected{% endif %}>Shutdown</option>
+                  <option value='4' {% if param1 == '4' %}selected{% endif %}>Pause</option>
+                  <option value='5' {% if param1 == '5' %}selected{% endif %}>Resume</option>
+                  <option value='6' {% if param1 == '6' %}selected{% endif %}>Quit</option>
+                  <option value='7' {% if param1 == '7' %}selected{% endif %}>Record start</option>
+                  <option value='8' {% if param1 == '8' %}selected{% endif %}>Record stop</option>
+                  <option value='9' {% if param1 == '9' %}selected{% endif %}>Clear</option>
+                  <option value='10' {% if param1 == '10' %}selected{% endif %}>Shutdown</option>
                 </select>
                 {# <span class="input-group-btn"> #}
                   <button class="btn btn-primary" type="button" onclick="buttononclick2()">GO!</button>
