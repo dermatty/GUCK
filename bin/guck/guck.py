@@ -581,7 +581,19 @@ class GControl:
             ri = range(idx, idx+1)
         for i in ri:
             fourcc = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
-            self.CAMERADATA[i].OUTVIDEO = cv2.VideoWriter(self.CAMERADATA[i].RECORDFILE, fourcc, 20.0, (640, 480))
+            # wait for caption
+            ret = False
+            for jj in range(10):
+                cap = cv2.VideoCapture(self.CAMERADATA[i].CAMURL)
+                ret, frame = cap.read()
+                if ret:
+                    ymax, xmax = frame.shape[:2]
+                    break
+            if not ret:
+                xmax = 640
+                ymax = 352
+            logger.info("Camera " + str(i) + ": resolution set to " + str(xmax) + "x" + str(ymax))
+            self.CAMERADATA[i].OUTVIDEO = cv2.VideoWriter(self.CAMERADATA[i].RECORDFILE, fourcc, 20.0, (xmax, ymax))
             if not self.CAMERADATA[i].ENABLE:
                 self.CAMERADATA[i].STATUS = 0
                 continue
@@ -997,7 +1009,7 @@ class GControl:
 
                         # recording
                         try:
-                            if self.SSHSERVER.recording() and self.CAMERADATA[i].DO_RECORD:
+                            if self.SSHSERVER.recording():    # and self.CAMERADATA[i].DO_RECORD:
                                 self.CAMERADATA[i].OUTVIDEO.write(frame0)
                                 pass
                         except AttributeError:

@@ -369,7 +369,7 @@ class Matcher:
             if D.class_ai > 0:
                 x, y, w, h = D.rect
                 color = (0, 255, 0)
-                frame0 = cv2.rectangle (frame0, (x, y), (x+w, y+h), color, 2)
+                frame0 = cv2.rectangle(frame0, (x, y), (x+w, y+h), color, 2)
                 outstr = str(D.id) + " # det:" + str(D.class_detection) + "# ai:" + str(D.class_ai)
                 cv2.putText(frame0, outstr, (x, y+20), cv2.FONT_HERSHEY_DUPLEX, 0.3, (0, 255, 0))
         return frame0
