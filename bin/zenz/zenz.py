@@ -13,6 +13,7 @@ sys.path.append("../../lib")
 
 import cv2 
 import telepot 
+from telepot.loop import MessageLoop
 import time 
 import zmq
 import paramiko
@@ -56,13 +57,14 @@ os.environ["GUCK_HOME"] = _guck_home
 GUCK_HOME = os.environ["GUCK_HOME"]
 
 
-def init_telegram():
+def telegram_init():
     global BOT
     global TOKEN
     global CHATIDLIST
     global UPDATEID
     try:
         BOT = telepot.Bot(TOKEN)
+        logger.info("Connected to Telegram bot!")
         for i in CHATIDLIST:
             BOT.sendMessage(i, "Telegram server started!")
         msg = BOT.getUpdates()
@@ -70,8 +72,8 @@ def init_telegram():
             UPDATEID = msg[0]["update_id"]
             UPDATEID += 1
             msg = BOT.getUpdates(offset=UPDATEID)
-        BOT.setWebhook()
-        BOT.message_loop(loophandle)
+        MessageLoop(BOT, loophandle).run_as_thread()
+        logger.info("Telegram MessageLoop thread started")
     except:
         BOT = None
         logger.error("Cannot start telegram, either bot does not exist or you have to initiate chat with bot!")
@@ -218,11 +220,8 @@ if __name__ == "__main__":
 
     ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
                             GUCK_PATH, REMOTE_VIRTUALENV)
-
-    print("------")
-            
     BOT = None
-    init_telegram()
+    telegram_init()
     if BOT is None:
         logger.info("Exiting zenz.py, cannot init bot ...")
         sys.exit()

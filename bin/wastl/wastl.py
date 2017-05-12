@@ -140,9 +140,9 @@ def guck(menu1, param1):
             upperbound = nr_cameras - 1
         # loop over all cameras and save photos as .jpg
         j = 1
-        camsok = True
         REMOTE_HOST = DB.db_query("remote", "remote_host")
         REMOTE_PORT = DB.db_query("remote", "remote_port")
+        camsok = True
         for photoindex in range(lowerbound, upperbound + 1):
             sstr = "photo " + str(photoindex)
             ok, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
@@ -156,19 +156,14 @@ def guck(menu1, param1):
                 cv2.imwrite(fn, repfr)
                 j += 1
             else:
+                pn.append(False)
                 camsok = False
         i = 0
         cursor = DB.db.cameras.find()
-        if not camsok:
-            camlist.append(("", "Guck host down"))
-        else:
-            for cam in cursor:
-                if camsok:
-                    camlist.append((str(i), cam["name"]))
-                else:
-                    camlist.append((str(i), "Not available!"))
-                i += 1
-            camlist.append((str(i), "ALL CAMERAS"))
+        for cam in cursor:
+            camlist.append((str(i), cam["name"], camsok))
+            i += 1
+        camlist.append((str(i), "ALL CAMERAS", camsok))
         return render_template("photo.html", camlist=camlist, pn=pn, param1=param1, menu1=menu1)
     elif menu1 == "system":
         # ping
