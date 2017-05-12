@@ -13,10 +13,8 @@ import requests
 import configparser
 import guckmongo
 import zenzlib
+import threading
 
-# init flask
-app = Flask(__name__)
-app.secret_key = "dfdsmdsv11nmDFSDfds"
 socketstate = None
 CHATEDIT_INDEX = -1
 
@@ -30,6 +28,13 @@ try:
 except Exception as e:
     print(str(e) + ": Cannot get WASTL config for DB, exiting ...")
     sys.exit()
+
+# start WastAlarmServer
+WAS = zenzlib.WastlAlarmClient()
+
+# init flask
+app = Flask(__name__)
+app.secret_key = "dfdsmdsv11nmDFSDfds"
 
 
 def save_and_prepare_forms(db0, form0, formlist):
@@ -110,6 +115,9 @@ def guck(menu1, param1):
     global socket
     global socketstate
     global DB
+    stat, data = WAS.get_from_guck()
+    if stat:
+        frame, tm = data
     if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")

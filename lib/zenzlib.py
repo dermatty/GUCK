@@ -4,6 +4,35 @@ from paramiko import SSHClient
 import paramiko
 import zmq
 import time
+import dill
+
+
+# waits for alarmphotos sent from guck
+class WastlAlarmClient:
+
+    def get_from_guck(self, url="etec.iv.at", port="7001"):
+        context = zmq.Context()
+        socket = context.socket(zmq.REQ)
+        socket.setsockopt(zmq.LINGER, 0)
+        socket.connect("tcp://" + url + ":" + port)
+        socket.RCVTIMEO = 300
+        socket.send_string("REQ")
+        try:
+            ret, r = socket.recv_pyobj()
+            socket.close()
+            context.term()
+            if ret:
+                return True, dill.loads(r)
+            else:
+                return False, False
+        except zmq.ZMQError as e:
+            socket.close()
+            context.term()
+            time.sleep(0.1)
+            return False, "WASTL connection error: " + str(e)
+
+
+    
 
 
 class ZenzLib:

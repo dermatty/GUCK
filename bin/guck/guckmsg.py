@@ -11,6 +11,7 @@ from email.mime.image import MIMEImage
 import queue, cv2, requests, posix_ipc
 import telepot , sensors, logging
 import os
+import dill
 
 ALARM_BREAK = False
 ALARM_QUIT = False
@@ -658,6 +659,39 @@ class MsgSendThread(Thread):
                         except Exception as e:
                             logger.error("Error in sending photo via e-mail: " + str(e))
             time.sleep(0.01)
+
+
+# WastlAlarmServer
+class WastlAlarmServer(Thread):
+    def __init__(self, lock):
+        Thread.__init__(self)
+        self.daemon = True
+        self.port = "7001"
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.bind("tcp://*:7001")
+        self.lock = lock
+        self.inqueue = []
+
+    def pop(self):
+        if len(self.inqueue) > 0:
+            with self.lock:
+                ret, r = True, self.inqueue.pop()
+        else:
+            ret, r = False, None
+        return ret, r
+
+    def push(self, p):
+        with self.lock:
+            if len(self.inqueue) > 10:
+                del self.inqueue[0]
+            self.inqueue.append(dill.dumps(p))
+
+    def run(self):
+        while True:
+            self.socket.recv_string()
+            ret, r = self.pop()
+            self.socket.send_pyobj((ret, r))
 
 
 # SSH Server

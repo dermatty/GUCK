@@ -411,6 +411,9 @@ class GControl:
         shm_initdata = self.PTZ, self.REBOOT, self.MOGSENS
         self.SSHSERVER = guckmsg.SSHServer(False, shm_initdata, threading.Lock())
 
+        # init WastAlarmServer
+        self.WAS = guckmsg.WastlAlarmServer(threading.Lock())
+
         # init telegram
         if self.DO_TELEGRAM:
             logger.info("Initializing Telegram ...")
@@ -762,6 +765,9 @@ class GControl:
         self.LASTLOG = tt0
         self.LASTAIPHOTO = tt0
         self.LASTCRIT = tt0
+        self.LASTWASTL = tt0
+
+        self.WAS.start()
 
         # start ssh server
         logger.info("Starting SSH server ...")
@@ -930,6 +936,12 @@ class GControl:
                             self.LASTCRIT = time.time()
                             if mem_crit or cpu_crit or gpu_crit or cam_crit:
                                 self.SENDMSG.sendtext("telegram", None, answ, None)
+
+                        # wastl
+                        if (humancount >= self.HCLIMIT and tx0 - self.LASTWASTL >= self.MAXT_TELEGRAM):
+                            tm = time.strftime("%a, %d %b %Y %H:%M:%S")
+                            self.WAS.push((frame0, tm))
+                            self.LASTWASTL = tx0
 
                         # Telegram
                         if (humancount >= self.HCLIMIT) and self.DO_TELEGRAM and self.TELEGRAMBOT and\
