@@ -52,8 +52,8 @@ if _guck_home == -1:
 if _guck_home[-1] != "/":
         _guck_home += "/"
 # replace for ubuntuserver
-_guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs_neu/")
-os.environ["GUCK_HOME"] = _guck_home
+guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
+os.environ["GUCK_HOME"] = guck_home
 GUCK_HOME = os.environ["GUCK_HOME"]
 
 
@@ -65,18 +65,20 @@ def telegram_init():
     try:
         BOT = telepot.Bot(TOKEN)
         logger.info("Connected to Telegram bot!")
-        for i in CHATIDLIST:
-            BOT.sendMessage(i, "Telegram server started!")
         msg = BOT.getUpdates()
         while msg != []:
             UPDATEID = msg[0]["update_id"]
             UPDATEID += 1
             msg = BOT.getUpdates(offset=UPDATEID)
+        for i in CHATIDLIST:
+            print(i)
+            BOT.sendMessage(i, "Telegram server started!")
         MessageLoop(BOT, loophandle).run_as_thread()
         logger.info("Telegram MessageLoop thread started")
-    except:
+    except Exception as e:
         BOT = None
-        logger.error("Cannot start telegram, either bot does not exist or you have to initiate chat with bot!")
+        logger.error("Cannot start telegram error: " + str(e))
+        sys.exit()
 
 
 def loophandle(msg):

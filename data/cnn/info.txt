@@ -1,2 +1,2 @@
-Here are .h5 files for keras cnn
+Here are .h5 files for keras cnn and the .pickle data
 
