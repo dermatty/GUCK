@@ -348,7 +348,7 @@ for (CNN_MODEL, NB_EPOCH) in zip(CNN_MODEL_LIST, NB_EPOCH_LIST):
     model.fit(X_train, Y_train, batch_size=batch_size,
               nb_epoch=NB_EPOCH, verbose=1,
               validation_data=(X_test, Y_test))
-    fn = "/media/nfs/NFS_Projekte/GIT/GUCK/data/cnn/" + + CNN_MODEL + "_" + OPT + ".h5"
+    fn = "/media/nfs/NFS_Projekte/GIT/GUCK/data/cnn/guck_cnn_" + CNN_MODEL + "_" + OPT + ".h5"
     model.save(fn)
     score = model.evaluate(X_test, Y_test, verbose=0)
     print(score)
