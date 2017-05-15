@@ -65,7 +65,7 @@ def telegram_init():
     try:
         BOT = telepot.Bot(TOKEN)
         logger.info("Connected to Telegram bot!")
-        msg = BOT.getUpdates()
+        msg = BOT.getUpdates(timeout=5)
         while msg != []:
             UPDATEID = msg[0]["update_id"]
             UPDATEID += 1

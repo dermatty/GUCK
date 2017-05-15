@@ -32,9 +32,6 @@ class WastlAlarmClient:
             return False, "WASTL connection error: " + str(e)
 
 
-    
-
-
 class ZenzLib:
     def __init__(self, remote_host, remote_host_mac, interface, remote_port, remote_host_short, remote_ssh_port,
                  guck_path, remote_virtualenv):

@@ -31,6 +31,7 @@ except Exception as e:
 
 # start WastAlarmServer
 WAS = zenzlib.WastlAlarmClient()
+PHOTOLIST = []
 
 # init flask
 app = Flask(__name__)
@@ -115,9 +116,8 @@ def guck(menu1, param1):
     global socket
     global socketstate
     global DB
-    stat, data = WAS.get_from_guck()
-    if stat:
-        frame, tm = data
+    global PHOTOLIST
+
     if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")
@@ -486,6 +486,14 @@ def _ajaxconfig():
         camerasform = models.CamerasForm(request.form)
         camerasform.populate_with_defaults(DB)
         result0 = render_template("config_camedit.html", camerasform=camerasform, camedit_action="add")
+    elif cmd == "guckphoto":
+        stat, data = WAS.get_from_guck()
+        if stat:
+            frame, tm = data
+            PHOTOLIST.append(data)
+            if len(PHOTOLIST) > 50:
+                del PHOTOLIST[0]
+        result0 = render_template("guckphoto.html", nralarms=len(PHOTOLIST))
     else:
         result0 = ""
     return jsonify(result=result0)

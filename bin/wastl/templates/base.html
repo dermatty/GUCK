@@ -15,8 +15,20 @@
     </style>
     <title>WASTL</title>
   </head>
-
+  
   <body>
+      <script type=text/javascript>
+       $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+       $(function() {
+           function refresh_guckphotos() {
+               $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "guckphoto"}, function(data) {
+                   var nr = data.result;
+                   $("#nralarms").html(nr);
+               });
+           };
+           setInterval(refresh_guckphotos, 2000);
+       });
+      </script>
     <nav class="navbar navbar-inverse navbar-custom">
           <div class="container-fluid">
             <div class="navbar-header">
@@ -42,14 +54,15 @@
                {% else %}
                   <li id="{{ id|e }}" {% if active_nav == id %} class="active" {% endif %}><a href="{{ href|e }}">{{ caption|e }}</a></li>
                {% endif %}
-            {% endfor %}                                                                               
-            <li class="icon">
-                <a href="javascript:void(0);" onclick="myFunction()">&#9776;</a>
-            </li>   
-            </ul>
+           {% endfor %}
+           <li class="icon">
+                 <a href="javascript:void(0);" onclick="myFunction()">&#9776;</a>
+           </li>
+           <li id="nralarms"><span class="badge" style="background: red;">0</span></li>
+          </ul>
           </div>
         </nav>
-    
+
     <div class="container">
       {% block repstr %}
       {% endblock %}
