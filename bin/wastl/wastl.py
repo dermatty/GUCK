@@ -32,6 +32,8 @@ except Exception as e:
 # start WastAlarmServer
 WAS = zenzlib.WastlAlarmClient()
 PHOTOLIST = []
+PHOTOLIST_LEN = 0
+GUCKSTATUS = False
 
 # init flask
 app = Flask(__name__)
@@ -108,6 +110,24 @@ def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
 @app.route("/zenz", methods=['GET', 'POST'])
 def zenz():
     return render_template("zenz.html")
+
+
+@app.route("/detections", methods=['GET', 'POST'])
+def detections():
+    global PHOTOLIST
+    global PHOTOLIST_LEN
+    detlist = []
+    for i, ple in enumerate(reversed(PHOTOLIST)):
+        if i > 5:
+            break
+        # save new .jpg
+        frame, tm = ple
+        photoname = "detphoto" + tm + ".jpg"
+        detlist.append((photoname, tm))
+        fn = "./static/" + photoname
+        cv2.imwrite(fn, frame)
+    PHOTOLIST_LEN = 0
+    return render_template("detections.html", detlist=detlist)
 
 
 @app.route("/guck/<menu1>/", defaults={"param1": "0"}, methods=['GET', 'POST'])
@@ -435,6 +455,8 @@ def guck(menu1, param1):
 @app.route("/_ajaxconfig", methods=["GET", "POST"])
 def _ajaxconfig():
     global DB
+    global PHOTOLIST_LEN
+    global GUCKSTATUS
     cmd = request.args.get("cmd")
     index = request.args.get("index", 0, type=int)
     if cmd == "delete":
@@ -489,14 +511,20 @@ def _ajaxconfig():
     elif cmd == "guckphoto":
         stat, data = WAS.get_from_guck()
         if stat:
+            PHOTOLIST_LEN += 1
             frame, tm = data
             PHOTOLIST.append(data)
             if len(PHOTOLIST) > 50:
                 del PHOTOLIST[0]
-        result0 = render_template("guckphoto.html", nralarms=len(PHOTOLIST))
+                PHOTOLIST_LEN -= 1
+        if stat is False and data is not False:
+            GUCKSTATUS = False
+        else:
+            GUCKSTATUS = True
+        result0 = render_template("guckphoto.html", nralarms=PHOTOLIST_LEN)
     else:
         result0 = ""
-    return jsonify(result=result0)
+    return jsonify(result=result0, status=GUCKSTATUS)
 
 
 @app.route("/configmsg", methods=["GET", "POST"])

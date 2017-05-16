@@ -140,13 +140,14 @@ def loophandle(msg):
         else:
             res = sendtext_toGuck(msg0[2:], chatid, REMOTE_HOST, REMOTE_PORT)
     elif msg0[:4] == "bot.":
-        print(msg0)
+        logger.info("Received bot msg:" + msg0)
         if msg0[4:] == "exit":
             SEMAPHORE.acquire()
             running = False
             BOT.sendMessage(chatid, "Exiting Telegram Server, byebye!")
             SEMAPHORE.release()
         elif msg0[4:] == "status":
+            logger.info("Status start")
             overall_mem = round(psutil.virtual_memory()[0] / float(2 ** 20) / 1024, 2)
             free_mem = round(psutil.virtual_memory()[1] / float(2 ** 20) / 1024, 2)
             used_mem = round(overall_mem - free_mem, 2)
@@ -154,6 +155,7 @@ def loophandle(msg):
             cpu_perc = psutil.cpu_percent(interval=0.25, percpu=False)
             ret = "\nRAM: " + str(perc_used) + "% ( =" + str(used_mem) + " GB) of overall " + str(overall_mem) + " GB used"
             ret += "\nCPU: " + str(cpu_perc) + "% utilized"
+            logger.info("status comp. finished, sending ...")
             BOT.sendMessage(chatid, ret)
         else:
             BOT.sendMessage(chatid, "Do not know this bot command!")
