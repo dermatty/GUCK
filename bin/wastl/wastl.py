@@ -224,7 +224,7 @@ def guck(menu1, param1):
             else:
                 rep0.append("Error in ping to guck host: " + rep)
         # stop/shutdown
-        elif param1 == "3" or param1 == "11":
+        elif param1 == "3" or param1 == "10":
             ZENZL.killguck()
             if param1 == "3":
                 rep0.append("Killing guck on " + REMOTE_HOST_SHORT)
