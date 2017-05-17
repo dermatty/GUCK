@@ -98,7 +98,7 @@ def loophandle(msg):
         BOT.sendMessage(chatid, "Starting Guck, hope it works ... ;-)")
         return
     msg0 = msg["text"].lower()
-    if msg0[:2] == "g.":
+    if msg0[:2] == "g-":
         if msg0[2:] == "stop" or msg0[2:] == "shutdown":
             ZENZL.killguck()
             for c in CHATIDLIST:
@@ -139,7 +139,7 @@ def loophandle(msg):
                 return
         else:
             res = sendtext_toGuck(msg0[2:], chatid, REMOTE_HOST, REMOTE_PORT)
-    elif msg0[:4] == "bot.":
+    elif msg0[:4] == "bot-":
         logger.info("Received bot msg:" + msg0)
         if msg0[4:] == "exit":
             SEMAPHORE.acquire()

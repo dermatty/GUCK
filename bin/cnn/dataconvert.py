@@ -64,7 +64,7 @@ os.chdir(CWD0)
 
 fn = "/media/nfs/NFS_Projekte/GIT/GUCK/data/cnn/classification_raw_data.pickle"
 print("writing file:", fn)
-with open("classification_raw_data.pickle", "wb") as f:
+with open(fn, "wb") as f:
     dill.dump((X_shuffle, Y_shuffle), f)
 f.close()
 
