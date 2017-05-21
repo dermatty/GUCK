@@ -56,9 +56,9 @@ def flash_errors(form):
             ))
 
 
-@app.route("/favicon.png")
+@app.route("/wastl.png")
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'wastl.ico', mimetype='image/vnd.microsoft.icon')
 
 
 @app.route("/")
@@ -138,7 +138,7 @@ def guck(menu1, param1):
     global DB
     global PHOTOLIST
 
-    if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status":
+    if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status" or menu1 == "start":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")
         REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
@@ -193,6 +193,28 @@ def guck(menu1, param1):
             i += 1
         camlist.append((str(i), "ALL CAMERAS", camsok))
         return render_template("photo.html", camlist=camlist, pn=pn, param1=param1, menu1=menu1)
+    elif menu1 == "start":
+        rep0 = []
+        stat, rep = ZENZL.ping()
+        if stat == 0:
+            ZENZL.lanwake()
+            rep0.append(rep)
+            rep0.append("Guck host down, now booting up via WOL, pls try again in 1 min ...")
+        elif stat == 1:
+            noservers = ZENZL.get_nr_instances()
+            if noservers > 0:
+                ZENZL.killguck()
+                rep0.append(rep)
+                rep0.append("Killing guck on " + REMOTE_HOST_SHORT)
+            try:
+                ZENZL.startguck()
+                rep0.append("Starting guck at " + REMOTE_HOST_SHORT)
+            except Exception as e:
+                rep0.append(str(e))
+                # rep0 += "\nError in guck start up, possibly no ssh access to guck host ... ?"
+        else:
+            rep0.append("Error in ping to guck host: " + rep)
+        return render_template("start.html", rep0=rep0)
     elif menu1 == "system":
         # ping
         rep0 = []
