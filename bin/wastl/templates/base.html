@@ -65,6 +65,13 @@
                  </li>
                  <li id="nralarms"></li>
             </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if userauth == false %}
+                <li><a href="#" onclick="location.href='{{ url_for('userlogin') }}'"><span class="glyphicon glyphicon-log-in"></span>  Login</a></li>
+                {% else %}
+                <li><a href="#"><span class="glyphicon glyphicon-user"></span></a></li>
+                <li><a href="#" onclick="location.href='{{ url_for('userlogout') }}'"><span class="glyphicon glyphicon-log-out"></span>  Logout</a></li>
+                {% endif %}
           </div>
         </nav>
 

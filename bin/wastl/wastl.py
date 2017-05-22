@@ -2,7 +2,7 @@
 import sys
 sys.path.append("../../lib")
 
-from flask import Flask, render_template, request, send_from_directory, jsonify, flash
+from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect
 from bson.objectid import ObjectId
 import os
 import models
@@ -14,6 +14,7 @@ import configparser
 import guckmongo
 import zenzlib
 import threading
+import flask_login
 
 socketstate = None
 CHATEDIT_INDEX = -1
@@ -40,6 +41,43 @@ app = Flask(__name__)
 app.secret_key = "dfdsmdsv11nmDFSDfds"
 
 
+# Login Manager
+
+login_manager = flask_login.LoginManager()
+login_manager.init_app(app)
+users = {"stephan@untergrabner.at": {"pw": "123456"},
+         "gabriela@untergrabner.at": {"pw": "654321"}}
+
+
+class User(flask_login.UserMixin):
+    pass
+
+
+@login_manager.user_loader
+def user_loader(email):
+    if email not in users:
+        return
+    user = User()
+    user.id = email
+    return user
+
+
+@login_manager.request_loader
+def request_loader(request):
+    email = request.form.get('email')
+    if email not in users:
+        return
+    user = User()
+    user.id = email
+
+    # DO NOT ever store passwords in plaintext and always compare password
+    # hashes using constant-time comparison!
+    user.is_authenticated = request.form['pw'] == users[email]['pw']
+    return user
+
+
+# helper functions
+
 def save_and_prepare_forms(db0, form0, formlist):
     for f in formlist:
         if f == form0:
@@ -61,10 +99,30 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'wastl.ico', mimetype='image/vnd.microsoft.icon')
 
 
-@app.route("/")
-@app.route("/home")
+@app.route("/", methods=['GET', 'POST'])
+@app.route("/home", methods=['GET', 'POST'])
 def index():
-    return render_template("index.html")
+    print(flask_login.current_user.is_authenticated)
+    return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
+    '''else:
+        if request.method == "GET":
+            userloginform = models.UserLoginForm(request.form)
+            return render_template("login.html", userloginform=userloginform)
+        else:
+            userloginform = models.UserLoginForm(request.form)
+            email = userloginform.username.data
+            pw = userloginform.password.data
+            print(">>>>" + email + " " + pw)
+            try:
+                pw_hash = users[email]["pw"]
+            except:
+                return redirect(url_for("index"))
+            if pw == pw_hash:
+                user = User()
+                user.id = email
+                flask_login.login_user(user)
+                return render_template("index.html")
+            return redirect(url_for('index'))'''
 
 
 # hier noch fullscreen!
@@ -73,6 +131,7 @@ def index():
 @app.route("/livecam/<camnrstr>/<interval>/", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
 @app.route("/livecam/<camnrstr>/<interval>/<toggle>/", defaults={"ptz": 0}, methods=['GET', 'POST'])
 @app.route("/livecam/<camnrstr>/<interval>/<toggle>/<ptz>", methods=['GET', 'POST'])
+@flask_login.login_required
 def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
     if request.method == "GET":
         ptz0 = int(ptz)
@@ -107,12 +166,48 @@ def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
         pass
 
 
+@flask_login.login_required
 @app.route("/zenz", methods=['GET', 'POST'])
 def zenz():
     return render_template("zenz.html")
 
 
+@app.route("/userlogin", methods=['GET', 'POST'])
+def userlogin():
+    if request.method == "GET":
+        userloginform = models.UserLoginForm(request.form)
+        return render_template("login.html", userloginform=userloginform, userauth=flask_login.current_user.is_authenticated)
+    else:
+        userloginform = models.UserLoginForm(request.form)
+        email = userloginform.username.data
+        pw = userloginform.password.data
+        print(">>>>" + email + " " + pw)
+        try:
+            pw_hash = users[email]["pw"]
+        except:
+            return redirect(url_for("index"))
+        if pw == pw_hash:
+            user = User()
+            user.id = email
+            flask_login.login_user(user)
+            return render_template("index.html")
+        return redirect(url_for('index'))
+
+
+@login_manager.unauthorized_handler
+def unauthorized_handler():
+    return redirect(url_for('index'))
+
+
+@app.route("/userlogout", methods=['GET', 'POST'])
+@flask_login.login_required
+def userlogout():
+    flask_login.logout_user()
+    return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
+
+
 @app.route("/detections", methods=['GET', 'POST'])
+@flask_login.login_required
 def detections():
     global PHOTOLIST
     global PHOTOLIST_LEN
@@ -132,6 +227,7 @@ def detections():
 
 @app.route("/guck/<menu1>/", defaults={"param1": "0"}, methods=['GET', 'POST'])
 @app.route("/guck/<menu1>/<param1>", methods=['GET', 'POST'])
+@flask_login.login_required
 def guck(menu1, param1):
     global socket
     global socketstate
@@ -550,6 +646,7 @@ def _ajaxconfig():
 
 
 @app.route("/configmsg", methods=["GET", "POST"])
+@flask_login.login_required
 def configmsg():
     f = request.args.get("a")
     print(f)
@@ -557,6 +654,7 @@ def configmsg():
 
 
 @app.route("/hue/<menu1>")
+@flask_login.login_required
 def hue(menu1):
     return render_template("index.html")
 

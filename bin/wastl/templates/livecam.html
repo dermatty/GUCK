@@ -97,7 +97,7 @@
          <img id="iframe1" class="img-responsive" width="640" height="320" src="{{ camurl }}" style="overflow:hidden;" frameborder="0" marginheight="0">
          {# <iframe id="iframe1" src={{ camurl }} frameborder="0" marginheight="0" height="640" width="320" style="overflow:hidden;"></iframe> #}
       {% else %}
-         <iframe id="iframe2" src={{ videourl }} frameborder="0" marginheight="0" width="100%" style="overflow:hidden; height: 100vh;"></iframe>
+         <iframe id="iframe2" src={{ videourl }} frameborder="0" marginheight="0" width="100%" style="overflow:hidden; height: 100vh;" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
          {# <iframe name="report"style="position: absolute; top: 0; right: 0; bottom: 0: left: 0;"> #}
       {% endif %}
   </div> {# container #}
@@ -115,7 +115,7 @@
         {% if speed > 0 %}       
         <iframe id="iframe0" src={{ camurl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;"></iframe>
         {% else %}
-        <iframe id="iframe2" src={{ videourl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;"></iframe>
+        <iframe id="iframe2" src={{ videourl }} frameborder="0" marginheight="0" width="100%" style="overflow: hidden; height: 100vh;" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>
         {% endif %}
     </div> {# panel body #}
     <br><br>
