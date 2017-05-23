@@ -34,7 +34,7 @@ wheels/
 *.h264
 *.log
 *.pickle
-
+*.pw
 
 
 # virtualenv

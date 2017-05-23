@@ -2,20 +2,11 @@
 import sys
 sys.path.append("../../lib")
 
-from hasher import hash_password, check_password
-import json
+from hasher import hash_password, check_password, read_hashfile, write_hashfile
 
 hashfile = "../../data/hash.pw"
 
-pwdict = {}
-f = open(hashfile, "r")
-try:
-    pwdict0 = json.loads(f.read())
-    for key in pwdict0:
-        pwdict[key] = pwdict0[key]
-except Exception as e:
-    print(e)
-f.close()
+pwdict = read_hashfile(hashfile)
 
 while True:
     print("The hashfile contains passwords for the following users:")
@@ -30,11 +21,11 @@ while True:
         break
     user = input("\nEnter user to add or to modify: ")
     if user in pwdict:
-        oldpw = input("User already exists, enter old pw to modify: ")
+        oldpw = input("User already exists, enter old pw to modify/delete: ")
         if not check_password(pwdict[user]["pw"], oldpw):
             print("wrong pw, skipped this one!")
             continue
-        ok = "Do you want to delete or modify? [d/m] "
+        ok = input("Do you want to delete or modify? [d/m] ")
         if ok == "d":
             del pwdict[user]
             continue
@@ -47,6 +38,4 @@ while True:
     pwdict[user] = {"pw": hash_password(newpw)}
 print(pwdict)
 
-f = open(hashfile, "w")
-f.write(json.dumps(pwdict))
-f.close()
+write_hashfile(hashfile, pwdict)

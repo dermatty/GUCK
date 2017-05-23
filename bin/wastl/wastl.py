@@ -15,6 +15,9 @@ import guckmongo
 import zenzlib
 import threading
 import flask_login
+from hasher import hash_password, check_password, read_hashfile, write_hashfile
+import json
+
 
 socketstate = None
 CHATEDIT_INDEX = -1
@@ -40,13 +43,13 @@ GUCKSTATUS = False
 app = Flask(__name__)
 app.secret_key = "dfdsmdsv11nmDFSDfds"
 
-
 # Login Manager
-
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
-users = {"stephan@untergrabner.at": {"pw": "123456"},
-         "gabriela@untergrabner.at": {"pw": "654321"}}
+
+# Passwords
+hashfile = "../../data/hash.pw"
+users = read_hashfile(hashfile)
 
 
 class User(flask_login.UserMixin):
@@ -72,7 +75,7 @@ def request_loader(request):
 
     # DO NOT ever store passwords in plaintext and always compare password
     # hashes using constant-time comparison!
-    user.is_authenticated = request.form['pw'] == users[email]['pw']
+    user.is_authenticated = check_password(users[email]['pw'], request.form["pw"])
     return user
 
 
@@ -137,7 +140,7 @@ def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
         ptz0 = int(ptz)
         camnr = int(camnrstr)
         cursor = DB.db_getall("cameras")
-        cameralist = [(cn["_id"], cn["name"], cn["photo_url"], cn["url"]) for cn in cursor]
+        cameralist = [(cn["_id"], cn["name"], cn["photo_url"], cn["s_url"]) for cn in cursor]
         if ptz0 != 0 and len(cameralist)-1 >= camnr:
             cursor = DB.db_getall("cameras")
             ptzlist = [(cn["_id"], cn["ptz_up"], cn["ptz_down"], cn["ptz_left"], cn["ptz_right"]) for cn in cursor]
@@ -178,15 +181,16 @@ def userlogin():
         userloginform = models.UserLoginForm(request.form)
         return render_template("login.html", userloginform=userloginform, userauth=flask_login.current_user.is_authenticated)
     else:
+        users = read_hashfile(hashfile)
         userloginform = models.UserLoginForm(request.form)
-        email = userloginform.username.data
+        email = userloginform.email.data
         pw = userloginform.password.data
-        print(">>>>" + email + " " + pw)
+        # print(">>>>" + email + " " + pw)
         try:
             pw_hash = users[email]["pw"]
         except:
             return redirect(url_for("index"))
-        if pw == pw_hash:
+        if check_password(pw_hash, pw):
             user = User()
             user.id = email
             flask_login.login_user(user)
