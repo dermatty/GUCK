@@ -2,7 +2,7 @@
 import sys
 sys.path.append("../../lib")
 
-from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect
+from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect, Response
 from bson.objectid import ObjectId
 import os
 import models
@@ -17,6 +17,8 @@ import threading
 import flask_login
 from hasher import hash_password, check_password, read_hashfile, write_hashfile
 import json
+import numpy as np
+import urllib.request
 
 
 socketstate = None
@@ -50,6 +52,35 @@ login_manager.init_app(app)
 # Passwords
 hashfile = "../../data/hash.pw"
 users = read_hashfile(hashfile)
+
+
+class Camera(object):
+    def __init__(self, camnr):
+        cursor = DB.db_getall("cameras")
+        cameralist = [cn["url"] for cn in cursor]
+        self.surl = cameralist[camnr]
+        #self.cap = cv2.VideoCapture(self.surl)
+        self.stream = urllib.request.urlopen(self.surl)
+        self.bytes = b''
+
+    def get_frame(self):
+        while True:
+            self.bytes += self.stream.read(1024)
+            a = self.bytes.find(b'\xff\xd8')
+            b = self.bytes.find(b'\xff\xd9')
+            if a != -1 and b != -1:
+                jpg = self.bytes[a:b+2]
+                self.bytes = self.bytes[b+2:]
+                frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                ret, jpeg = cv2.imencode('.jpg', frame)
+                return ret, jpeg.tobytes()
+
+
+def gen(camera):
+    """Video streaming generator function."""
+    while True:
+        ret, frame = camera.get_frame()
+        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 class User(flask_login.UserMixin):
@@ -107,40 +138,25 @@ def favicon():
 def index():
     print(flask_login.current_user.is_authenticated)
     return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
-    '''else:
-        if request.method == "GET":
-            userloginform = models.UserLoginForm(request.form)
-            return render_template("login.html", userloginform=userloginform)
-        else:
-            userloginform = models.UserLoginForm(request.form)
-            email = userloginform.username.data
-            pw = userloginform.password.data
-            print(">>>>" + email + " " + pw)
-            try:
-                pw_hash = users[email]["pw"]
-            except:
-                return redirect(url_for("index"))
-            if pw == pw_hash:
-                user = User()
-                user.id = email
-                flask_login.login_user(user)
-                return render_template("index.html")
-            return redirect(url_for('index'))'''
+
+
+@app.route('/video_feed/<camnr>/')
+def video_feed(camnr):
+    return Response(gen(Camera(int(camnr)-1)), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 # hier noch fullscreen!
-@app.route("/livecam/", defaults={"camnrstr": 0, "interval": 5, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/", defaults={"interval": 5, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/<interval>/", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/<interval>/<toggle>/", defaults={"ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/<interval>/<toggle>/<ptz>", methods=['GET', 'POST'])
+@app.route("/livecam/", defaults={"camnrstr": 0, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/<toggle>/", defaults={"ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/<toggle>/<ptz>", methods=['GET', 'POST'])
 @flask_login.login_required
-def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
+def livecam(camnrstr=0, toggle=0, ptz=0):
     if request.method == "GET":
         ptz0 = int(ptz)
         camnr = int(camnrstr)
         cursor = DB.db_getall("cameras")
-        cameralist = [(cn["_id"], cn["name"], cn["photo_url"], cn["s_url"]) for cn in cursor]
+        cameralist = [(cn["_id"], cn["name"], cn["photo_url"], cn["url"]) for cn in cursor]
         if ptz0 != 0 and len(cameralist)-1 >= camnr:
             cursor = DB.db_getall("cameras")
             ptzlist = [(cn["_id"], cn["ptz_up"], cn["ptz_down"], cn["ptz_left"], cn["ptz_right"]) for cn in cursor]
@@ -159,12 +175,7 @@ def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
                     requests.get(ptzcommand)
                 except:
                     pass
-        if len(cameralist)-1 >= camnr:
-            _, _, camurl, videourl = cameralist[camnr]
-        else:
-            camurl = "-"
-        return render_template("livecam.html", cameralist=cameralist, camurl=camurl, videourl=videourl, camnr=camnr+1,
-                               speed=int(interval), toggle=int(toggle), ptz=0)
+        return render_template("livecam.html", cameralist=cameralist, camnr=camnr+1, toggle=int(toggle), ptz=0)
     elif request.method == "POST":
         pass
 

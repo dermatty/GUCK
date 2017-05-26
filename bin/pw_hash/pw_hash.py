@@ -1,5 +1,6 @@
 #!/home/stephan/.virtualenvs/cvp0/bin/python
 import sys
+import getpass
 sys.path.append("../../lib")
 
 from hasher import hash_password, check_password, read_hashfile, write_hashfile
@@ -21,7 +22,7 @@ while True:
         break
     user = input("\nEnter user to add or to modify: ")
     if user in pwdict:
-        oldpw = input("User already exists, enter old pw to modify/delete: ")
+        oldpw = getpass.getpass(prompt="User already exists, enter old pw to modify/delete: ")
         if not check_password(pwdict[user]["pw"], oldpw):
             print("wrong pw, skipped this one!")
             continue
@@ -29,8 +30,8 @@ while True:
         if ok == "d":
             del pwdict[user]
             continue
-    newpw = input("Please enter new password: ")
-    newpw_check = input("Please confirm new password: ")
+    newpw = getpass.getpass("Please enter new password: ")
+    newpw_check = getpass.getpass("Please confirm new password: ")
     if newpw != newpw_check:
         print("Wrong confirmation, skipped this one!")
         continue
