@@ -1,83 +1,84 @@
 <!doctype html>
 <html lang="de">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='wastl.png') }}">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
-    <style>
-     .navbar-custom { font-size: 18px;}
-     .navbar-brand { font-size: 32px;}
-     .navbar-nav>li>a{color: white;}
-    </style>
-    <title>WASTL</title>
-  </head>
-  
-  <body>
-      <script type=text/javascript>
-       $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-       $(function() {
-           function refresh_guckphotos() {
-               $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "guckphoto"}, function(data) {
-                   var nr = data.result;
-                   var status = data.status;
-                   if (status == true) {
-                       $("#nralarms").html(nr);
-                   };
-               });
-           };
-           setInterval(refresh_guckphotos, 2000);
-       });
-      </script>
-    <nav class="navbar navbar-inverse navbar-custom">
-          <div class="container-fluid">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="#">WASTL</a>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="shortcut icon" href="{{ url_for('static', filename='wastl.png') }}">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
+        <style>
+         .navbar-custom { font-size: 18px;}
+         .navbar-brand { font-size: 32px;}
+         .navbar-nav>li>a{color: white;}
+        </style>
+        <title>WASTL</title>
+    </head>
+    
+    <body>
+        <script type=text/javascript>
+         $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+         $(function() {
+             function refresh_guckphotos() {
+                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "guckphoto"}, function(data) {
+                     var nr = data.result;
+                     var status = data.status;
+                     if (status == true) {
+                         $("#nralarms").html(nr);
+                     };
+                 });
+             };
+             setInterval(refresh_guckphotos, 2000);
+         });
+        </script>
+        <nav class="navbar navbar-inverse navbar-custom">
+            <div class="container-fluid">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="#">WASTL</a>
+                </div>
+                {% set navbar0_dd = [("home","/home","Home",".", ".", ".", ".", ".",".","."),
+                ("livecam", "/livecam","LiveCam",".", ".", ".", ".", ".",".","."), 
+                ("guck","/guck","Guck","start", "status","photo","config","system","help","runtime-settings"),
+                ("hue","/hue","Hue","on","off",".",".",".",".",".")] %}
+                <ul class="nav navbar-nav">     
+                    {% for id, href, caption, pp1, pp2, pp3, pp4, pp5, pp6, pp7 in navbar0_dd%}
+                    {% if pp1 != "." %}
+                    <li id="{{ id|e }}" {% if active_nav == id %} class="dropdown active" {% else %} class="dropdown" {% endif %}><a class="dropdown-toggle" data-toggle="dropdown" href=" href="{{ href|e }}"">{{ caption|e }}<span class="caret"></span></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{{ url_for(id, menu1=pp1) }}">{{ pp1|e }}</a></li>
+                            {% if pp2 != "." %} <li><a href="{{ url_for(id, menu1=pp2) }}">{{ pp2|e }}</a></li> {% endif %}
+                            {% if pp3 != "." %} <li><a href="{{ url_for(id, menu1=pp3) }}">{{ pp3|e }}</a></li> {% endif %}
+                            {% if pp4 != "." %} <li><a href="{{ url_for(id, menu1=pp4) }}">{{ pp4|e }}</a></li> {% endif %}
+                            {% if pp5 != "." %} <li><a href="{{ url_for(id, menu1=pp5) }}">{{ pp5|e }}</a></li> {% endif %}
+                            {% if pp6 != "." %} <li><a href="{{ url_for(id, menu1=pp6) }}">{{ pp6|e }}</a></li> {% endif %}
+                            {% if pp7 != "." %} <li><a href="{{ url_for(id, menu1=pp7) }}">{{ pp7|e }}</a></li> {% endif %}
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li id="{{ id|e }}" {% if active_nav == id %} class="active" {% endif %}><a href="{{ href|e }}">{{ caption|e }}</a></li>
+                    {% endif %}
+                    {% endfor %}
+                    <li id="cameraicon">
+                        <a href="#"  onclick="location.href='{{ url_for('detections') }}'" class="btn btn-default btn-lg" style="width: 60px; margin-left: 15px;">
+                            <span class="glyphicon glyphicon-camera" style="color: black;"></span> 
+                        </a>
+                    </li>
+                    <li id="nralarms"></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    {% if userauth == false %}
+                    <li><a href="#" onclick="location.href='{{ url_for('userlogin') }}'"><span class="glyphicon glyphicon-log-in"></span>  Login</a></li>
+                    {% else %}
+                    <li><a href="#"><span class="glyphicon glyphicon-user"></span></a></li>
+                    <li><a href="#" onclick="location.href='{{ url_for('userlogout') }}'"><span class="glyphicon glyphicon-log-out"></span>  Logout</a></li>
+                    {% endif %}
             </div>
-            {% set navbar0_dd = [("home","/home","Home",".", ".", ".", ".", ".","."),
-                                 ("livecam", "/livecam","LiveCam",".", ".", ".", ".", ".","."), 
-                                 ("guck","/guck","Guck","start", "status","photo","config","system","help"),
-                                 ("hue","/hue","Hue","on","off",".",".",".",".")] %}
-            <ul class="nav navbar-nav">     
-            {% for id, href, caption, pp1, pp2, pp3, pp4, pp5, pp6 in navbar0_dd%}
-               {% if pp1 != "." %}
-                  <li id="{{ id|e }}" {% if active_nav == id %} class="dropdown active" {% else %} class="dropdown" {% endif %}><a class="dropdown-toggle" data-toggle="dropdown" href=" href="{{ href|e }}"">{{ caption|e }}<span class="caret"></span></a>
-                    <ul class="dropdown-menu">
-                      <li><a href="{{ url_for(id, menu1=pp1) }}">{{ pp1|e }}</a></li>
-                      {% if pp2 != "." %} <li><a href="{{ url_for(id, menu1=pp2) }}">{{ pp2|e }}</a></li> {% endif %}
-                      {% if pp3 != "." %} <li><a href="{{ url_for(id, menu1=pp3) }}">{{ pp3|e }}</a></li> {% endif %}
-                      {% if pp4 != "." %} <li><a href="{{ url_for(id, menu1=pp4) }}">{{ pp4|e }}</a></li> {% endif %}
-                      {% if pp5 != "." %} <li><a href="{{ url_for(id, menu1=pp5) }}">{{ pp5|e }}</a></li> {% endif %}
-                      {% if pp6 != "." %} <li><a href="{{ url_for(id, menu1=pp5) }}">{{ pp6|e }}</a></li> {% endif %}
-                    </ul>
-                  </li>
-               {% else %}
-                  <li id="{{ id|e }}" {% if active_nav == id %} class="active" {% endif %}><a href="{{ href|e }}">{{ caption|e }}</a></li>
-               {% endif %}
-            {% endfor %}
-                  <li id="cameraicon">
-                      <a href="#"  onclick="location.href='{{ url_for('detections') }}'" class="btn btn-default btn-lg" style="width: 60px; margin-left: 15px;">
-                          <span class="glyphicon glyphicon-camera" style="color: black;"></span> 
-                      </a>
-                 </li>
-                 <li id="nralarms"></li>
-            </ul>
-            <ul class="nav navbar-nav navbar-right">
-                {% if userauth == false %}
-                <li><a href="#" onclick="location.href='{{ url_for('userlogin') }}'"><span class="glyphicon glyphicon-log-in"></span>  Login</a></li>
-                {% else %}
-                <li><a href="#"><span class="glyphicon glyphicon-user"></span></a></li>
-                <li><a href="#" onclick="location.href='{{ url_for('userlogout') }}'"><span class="glyphicon glyphicon-log-out"></span>  Logout</a></li>
-                {% endif %}
-          </div>
         </nav>
 
-    <div class="container">
-      {% block repstr %}
-      {% endblock %}
-    </div>
-</body>
+        <div class="container">
+            {% block repstr %}
+            {% endblock %}
+        </div>
+    </body>
 </html>

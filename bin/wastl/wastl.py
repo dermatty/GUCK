@@ -19,6 +19,7 @@ from hasher import hash_password, check_password, read_hashfile, write_hashfile
 import json
 import numpy as np
 import urllib.request
+from requests.auth import HTTPBasicAuth
 
 
 socketstate = None
@@ -55,32 +56,55 @@ users = read_hashfile(hashfile)
 
 
 class Camera(object):
-    def __init__(self, camnr):
+    def __init__(self, camnr, interval=0):
+        self.interval = interval
+        
         cursor = DB.db_getall("cameras")
         cameralist = [cn["url"] for cn in cursor]
+        self.username = "admin"
+        self.password = "pascal29"
         self.surl = cameralist[camnr]
         #self.cap = cv2.VideoCapture(self.surl)
-        self.stream = urllib.request.urlopen(self.surl)
+        #self.stream = urllib.request.urlopen(urllib.request.Request(self.surl))
+        self.r = requests.get(self.surl, auth=HTTPBasicAuth(self.username, self.password), stream=True)
+        self.lasttime = time.time()
         self.bytes = b''
 
+    def restart(self):
+        self.r = requests.get(self.surl, auth=HTTPBasicAuth(self.username, self.password), stream=True)
+        #self.bytes = b''
+
     def get_frame(self):
-        while True:
-            self.bytes += self.stream.read(1024)
-            a = self.bytes.find(b'\xff\xd8')
-            b = self.bytes.find(b'\xff\xd9')
-            if a != -1 and b != -1:
-                jpg = self.bytes[a:b+2]
-                self.bytes = self.bytes[b+2:]
-                frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-                ret, jpeg = cv2.imencode('.jpg', frame)
-                return ret, jpeg.tobytes()
+        # while True:
+        try:
+            for chunk in self.r.iter_content(chunk_size=1024):
+                self.bytes += chunk   # self.stream.read(1024)
+                a = self.bytes.find(b'\xff\xd8')
+                b = self.bytes.find(b'\xff\xd9')
+                if a != -1 and b != -1:
+                    jpg = self.bytes[a:b+2]
+                    self.bytes = self.bytes[b+2:]
+                    if time.time() - self.lasttime >= self.interval:
+                        frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                        ret, jpeg = cv2.imencode('.jpg', frame)
+                        self.lasttime = time.time()
+                        return ret, jpeg.tobytes()
+                    else:
+                        return False, None
+        except:
+            return False, None
 
 
 def gen(camera):
-    """Video streaming generator function."""
+    global frame0
     while True:
-        ret, frame = camera.get_frame()
-        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        try:
+            ret, frame = camera.get_frame()
+            time.sleep(0.01)
+            if ret and frame is not None:
+                yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        except:
+            return
 
 
 class User(flask_login.UserMixin):
@@ -140,18 +164,27 @@ def index():
     return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
 
 
-@app.route('/video_feed/<camnr>/')
-def video_feed(camnr):
-    return Response(gen(Camera(int(camnr)-1)), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/video_feed/<camnr>/', defaults={"interval": 5})
+@app.route('/video_feed/<camnr>/<interval>/')
+def video_feed(camnr, interval=5):
+    global gen0
+    try:
+        gen0.close()
+    except:
+        pass
+    gen0 = gen(Camera(int(camnr)-1, int(interval)))
+    ret = Response(gen0, mimetype='multipart/x-mixed-replace; boundary=frame')
+    return ret
 
 
 # hier noch fullscreen!
-@app.route("/livecam/", defaults={"camnrstr": 0, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/<toggle>/", defaults={"ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/<toggle>/<ptz>", methods=['GET', 'POST'])
+@app.route("/livecam/", defaults={"camnrstr": 0, "interval": 5, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/", defaults={"interval": 5, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/<interval>/", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/<interval>/<toggle>/", defaults={"ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/<interval>/<toggle>/<ptz>", methods=['GET', 'POST'])
 @flask_login.login_required
-def livecam(camnrstr=0, toggle=0, ptz=0):
+def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
     if request.method == "GET":
         ptz0 = int(ptz)
         camnr = int(camnrstr)
@@ -175,7 +208,8 @@ def livecam(camnrstr=0, toggle=0, ptz=0):
                     requests.get(ptzcommand)
                 except:
                     pass
-        return render_template("livecam.html", cameralist=cameralist, camnr=camnr+1, toggle=int(toggle), ptz=0)
+        return render_template("livecam.html", cameralist=cameralist, camnr=camnr+1, speed=int(interval),
+                               toggle=int(toggle), ptz=0)
     elif request.method == "POST":
         pass
 
@@ -304,6 +338,9 @@ def guck(menu1, param1):
             i += 1
         camlist.append((str(i), "ALL CAMERAS", camsok))
         return render_template("photo.html", camlist=camlist, pn=pn, param1=param1, menu1=menu1)
+    elif menu1 == "runtime-settings":
+        print("-------------")
+        return render_template("runtime.html", param1=param1)
     elif menu1 == "start":
         rep0 = []
         stat, rep = ZENZL.ping()
@@ -361,7 +398,7 @@ def guck(menu1, param1):
             ZENZL.killguck()
             if param1 == "3":
                 rep0.append("Killing guck on " + REMOTE_HOST_SHORT)
-            if param1 == "10":
+            if param1 == "11":
                 ZENZL.shutdown()
                 rep0.append("Killing guck, shutting down " + REMOTE_HOST_SHORT)
         elif param1 in ["4", "5", "6", "7", "8", "9"]:

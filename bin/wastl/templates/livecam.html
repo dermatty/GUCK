@@ -15,6 +15,7 @@
      };
  });
 </script> #}
+{{ camnr }}
 
 {% if toggle == 0 %}
 <div class="panel panel-default">
@@ -50,6 +51,23 @@
               </form>
           </tbody>
       </table>
+      <div class="dropdown">
+          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+              {% if speed > 0 %}
+              Interval: {{ speed }}
+              {% else %}
+              Streaming
+              {% endif %}
+              <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=0, toggle=0) }}">0 (stream)</a></li>
+              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=2, toggle=0) }}">2 sec</a></li>
+              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=5, toggle=0) }}">5 sec</a></li>
+              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=10, toggle=0) }}">10 sec</a></li>
+              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=30, toggle=0) }}">30 sec</a></li>
+          </ul>
+      </div>
       <br>
       <div class="row" >
           <div class="col-xs-3">
@@ -78,7 +96,7 @@
   </div> {# panel body #}
   <hr>
   <div class="container" style="text-align:center;">
-      <img id="iframe2" src="{{ url_for('video_feed', camnr=camnr) }}">
+      <img id="iframe2" src="{{ url_for('video_feed', camnr=camnr, interval=speed) }}">
   </div> {# container #}
   <br><br>
 </div> {# panel #}
@@ -91,7 +109,7 @@
     </div>
     <div class="panel-body" style="text-align:center;">
         <br>
-        <img id="iframe2" src="{{ url_for('video_feed', camnr=camnr) }}">
+        <img id="iframe2" src="{{ url_for('video_feed', camnr=camnr, interval=speed) }}">
     </div> {# panel body #}
     <br><br>
 </div>
