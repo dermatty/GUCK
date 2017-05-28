@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% set active_nav = "guck" %}
+
+{% block repstr %}
+<div class="panel panel-default">
+    <div class="panel-heading" style="font-size:18px;">Guck Runtime Settings</div>
+      <div class="panel-body">
+          <br>
+          {# Telegram Mode #}
+          <div class="row">
+              <div class="col-sm-2">
+                  Telegram mode:
+              </div>
+              <div class="col-sm-2">
+                  <div class="btn-group" id="toggle1">
+                      <button type="button" class="btn btn-info locked_active">OFF</button>
+                      <button type="button" class="btn btn-default unlocked_inactive">ON</button>
+                  </div>
+              </div>
+          </div>
+          <br>
+          {# CV Sens #}
+          <div class="row">
+              <div class="col-sm-2">
+                  CV Sensitivity:
+              </div>
+              <div class="col-sm-2">
+                  <div class="btn-group" id="toggle2">
+                      <button type="button" class="btn btn-info locked_active">OFF</button>
+                      <button type="button" class="btn btn-default unlocked_inactive">ON</button>
+                  </div>
+              </div>
+          </div>
+          <br>
+          {# AI Sens #}
+          <div class="row">
+              <div class="col-sm-2">
+                  AI Sensitivity:
+              </div>
+              <div class="col-sm-2">
+                  <div class="btn-group" id="toggle3">
+                      <button type="button" class="btn btn-info locked_active">OFF</button>
+                      <button type="button" class="btn btn-default unlocked_inactive">ON</button>
+                  </div>
+              </div>
+          </div>
+          <br>
+      </div>  {# panel body #}
+</div> {# panel heading #}
+</div> {# panel default #}
+
+<script type=text/javascript>
+ $('#toggle1 button').click(function(){
+	 if($(this).hasClass('locked_active') || $(this).hasClass('unlocked_inactive')){
+		 /* code to do when unlocking */
+         // $('#switch_status').html('Switched on.');
+	 }else{
+		 /* code to do when locking */
+         // $('#switch_status').html('Switched off.');
+	 } 
+	 /* reverse locking status */
+	 $('#toggle1 button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
+	 $('#toggle1 button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
+ });
+ $('#toggle2 button').click(function(){
+	 if($(this).hasClass('locked_active') || $(this).hasClass('unlocked_inactive')){
+		 /* code to do when unlocking */
+         // $('#switch_status').html('Switched on.');
+	 }else{
+		 /* code to do when locking */
+         // $('#switch_status').html('Switched off.');
+	 } 
+	 /* reverse locking status */
+	 $('#toggle2 button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
+	 $('#toggle2 button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
+ });
+ $('#toggle3 button').click(function(){
+	 if($(this).hasClass('locked_active') || $(this).hasClass('unlocked_inactive')){
+		 /* code to do when unlocking */
+         // $('#switch_status').html('Switched on.');
+	 }else{
+		 /* code to do when locking */
+         // $('#switch_status').html('Switched off.');
+	 } 
+	 /* reverse locking status */
+	 $('#toggle3 button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
+	 $('#toggle3 button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
+ });
+</script>
+{% endblock %}
