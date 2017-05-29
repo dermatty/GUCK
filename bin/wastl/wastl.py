@@ -692,6 +692,25 @@ def _ajaxconfig():
         else:
             GUCKSTATUS = True
         result0 = render_template("guckphoto.html", nralarms=PHOTOLIST_LEN)
+    elif cmd == "runtime_tgmode on" or cmd == "runtime_tgmode off":
+        GUCK_PATH = DB.db_query("remote", "guck_path")
+        REMOTE_HOST = DB.db_query("remote", "remote_host")
+        REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
+        REMOTE_PORT = DB.db_query("remote", "remote_port")
+        REMOTE_SSH_PORT = DB.db_query("remote", "remote_ssh_port")
+        REMOTE_HOST_MAC = DB.db_query("remote", "remote_host_mac")
+        INTERFACE = DB.db_query("remote", "interface")
+        REMOTE_VIRTUALENV = DB.db_query("remote", "remote_virtualenv")
+        ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
+                                GUCK_PATH, REMOTE_VIRTUALENV)
+        sstr = "tgmode silent"
+        if cmd == "runtime_tgmode on":
+            sstr = "tgmode verbose"
+        stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
+    elif cmd == "runtime_sens":
+        pass
+    elif cmd == "runtime_aisens":
+        pass
     else:
         result0 = ""
     return jsonify(result=result0, status=GUCKSTATUS)

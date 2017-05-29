@@ -96,20 +96,20 @@
   </div> {# panel body #}
   <hr>
   <div class="container" style="text-align:center;">
-      <img id="iframe2" src="{{ url_for('video_feed', camnr=camnr, interval=speed) }}">
+      <img id="iframe2" class="img-responsive" src="{{ url_for('video_feed', camnr=camnr, interval=speed) }}">
   </div> {# container #}
   <br><br>
 </div> {# panel #}
 {% else %}
 <div class="panel panel-default">
     <div class="panel-heading" style="font-size:18px;"> 
-        <div style="text-align: center;">
+        <div>
             <button type="button" class="btn btn-primary" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=0) }}'">LiveCam: toggle view</button>
         </div>
     </div>
     <div class="panel-body" style="text-align:center;">
         <br>
-        <img id="iframe2" src="{{ url_for('video_feed', camnr=camnr, interval=speed) }}">
+        <img id="iframe2" class="img-responsive" src="{{ url_for('video_feed', camnr=camnr, interval=speed) }}">
     </div> {# panel body #}
     <br><br>
 </div>

@@ -50,6 +50,8 @@
 </div> {# panel default #}
 
 <script type=text/javascript>
+
+ // Toggle Telegram mode
  $('#toggle1 button').click(function(){
 	 if($(this).hasClass('locked_active') || $(this).hasClass('unlocked_inactive')){
 		 /* code to do when unlocking */
@@ -62,6 +64,8 @@
 	 $('#toggle1 button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
 	 $('#toggle1 button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
  });
+
+ // Toggle CV Sens
  $('#toggle2 button').click(function(){
 	 if($(this).hasClass('locked_active') || $(this).hasClass('unlocked_inactive')){
 		 /* code to do when unlocking */
@@ -74,6 +78,8 @@
 	 $('#toggle2 button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
 	 $('#toggle2 button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
  });
+
+ // Toggle AI Sens
  $('#toggle3 button').click(function(){
 	 if($(this).hasClass('locked_active') || $(this).hasClass('unlocked_inactive')){
 		 /* code to do when unlocking */
