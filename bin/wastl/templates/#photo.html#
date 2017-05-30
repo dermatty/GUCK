@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block repstr %}
+ <div class="panel panel-default">
+  <div class="panel-heading" style="font-size:18px;" align="center">Guck Photo</div>
+   <div class="panel-body">
+   <div class="container">
+     <h5>Choose Camera:</h5>
+     <form>
+       {% for camnr,camname,camok in camlist %}
+          {% if camok == True %}
+             <label class="radio-inline">
+                 <input id={{ camname|e }} type="radio" {% if param1 == camnr %}checked="checked"{% endif %} onclick="location.href='{{ url_for('guck', menu1='photo', param1=camnr) }}'" name="optradio">{{ camname|e }}
+             </label>
+         {% else %}
+             <label class="radio-inline">
+                 <input id="{{ camname|e }}" type="radio" name="optradio" disabled>{{ camname|e }} (N/A)
+             </label>
+          {% endif %}
+       {% endfor %} 
+     </form>
+   </div>
+   <div class="container">
+     <div class="row">
+       {% for p1 in pn %}
+         {% if p1 == False %}
+            <br>
+            <p>Guck down, no photo available!</p>
+         {% else %}
+          <div class="col-sm-12">
+               <br>
+               <img class="img-responsive" alt={{ p1 }} width="640" height="320" src="{{ url_for('static', filename=p1) }}">
+          </div>
+         {% endif %}
+       {% endfor %}
+     </div>
+     <br>
+     <a href="#" class="btn btn-info btn-lg" onclick="location.href='{{ url_for('guck', menu1='photo', param1=param1) }}'">
+        <span class="glyphicon glyphicon-refresh"></span> Refresh
+     </a>
+   </div>
+   </div>
+  </div>
+ </div>
+{% endblock %}
+ n

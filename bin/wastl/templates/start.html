@@ -1,0 +1,16 @@
+while True:
+{% extends "base.html" %}
+{% set active_nav = "guck" %}
+
+{% block repstr %}
+<div class="panel panel-default">
+    <div class="panel-heading" style="font-size:18px;">Guck System Action</div>
+    <div class="panel-body">
+        <br>
+        {% for r in rep0 %}
+        <p>{{ r }}</p>
+        {% endfor %}
+    </div>
+</div>
+</div>
+{% endblock %}
