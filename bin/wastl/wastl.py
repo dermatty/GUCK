@@ -178,13 +178,13 @@ def video_feed(camnr, interval=5):
 
 
 # hier noch fullscreen!
-@app.route("/livecam/", defaults={"camnrstr": 0, "interval": 5, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/", defaults={"interval": 5, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/", defaults={"camnrstr": 0, "interval": 2, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/", defaults={"interval": 2, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
 @app.route("/livecam/<camnrstr>/<interval>/", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
 @app.route("/livecam/<camnrstr>/<interval>/<toggle>/", defaults={"ptz": 0}, methods=['GET', 'POST'])
 @app.route("/livecam/<camnrstr>/<interval>/<toggle>/<ptz>", methods=['GET', 'POST'])
 @flask_login.login_required
-def livecam(camnrstr=0, interval=5, toggle=0, ptz=0):
+def livecam(camnrstr=0, interval=2, toggle=0, ptz=0):
     if request.method == "GET":
         ptz0 = int(ptz)
         camnr = int(camnrstr)
@@ -339,7 +339,6 @@ def guck(menu1, param1):
         camlist.append((str(i), "ALL CAMERAS", camsok))
         return render_template("photo.html", camlist=camlist, pn=pn, param1=param1, menu1=menu1)
     elif menu1 == "runtime-settings":
-        print("-------------")
         return render_template("runtime.html", param1=param1)
     elif menu1 == "start":
         rep0 = []
@@ -398,7 +397,7 @@ def guck(menu1, param1):
             ZENZL.killguck()
             if param1 == "3":
                 rep0.append("Killing guck on " + REMOTE_HOST_SHORT)
-            if param1 == "11":
+            if param1 == "10":
                 ZENZL.shutdown()
                 rep0.append("Killing guck, shutting down " + REMOTE_HOST_SHORT)
         elif param1 in ["4", "5", "6", "7", "8", "9"]:
@@ -692,7 +691,7 @@ def _ajaxconfig():
         else:
             GUCKSTATUS = True
         result0 = render_template("guckphoto.html", nralarms=PHOTOLIST_LEN)
-    elif cmd == "runtime_tgmode on" or cmd == "runtime_tgmode off":
+    elif cmd == "runtime_tgmode on" or cmd == "runtime_gettgmode" or cmd == "runtime_tgmode off":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")
         REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
@@ -703,14 +702,14 @@ def _ajaxconfig():
         REMOTE_VIRTUALENV = DB.db_query("remote", "remote_virtualenv")
         ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
                                 GUCK_PATH, REMOTE_VIRTUALENV)
-        sstr = "tgmode silent"
-        if cmd == "runtime_tgmode on":
+        if cmd == "runtime_tgmode off":
+            sstr = "tgmode silent"
+        elif cmd == "runtime_tgmode on":
             sstr = "tgmode verbose"
+        else:
+            sstr = "gettgmode"
         stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
-    elif cmd == "runtime_sens":
-        pass
-    elif cmd == "runtime_aisens":
-        pass
+        result0 = res0
     else:
         result0 = ""
     return jsonify(result=result0, status=GUCKSTATUS)
@@ -731,4 +730,4 @@ def hue(menu1):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)

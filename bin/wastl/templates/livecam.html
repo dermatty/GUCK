@@ -15,7 +15,6 @@
      };
  });
 </script> #}
-{{ camnr }}
 
 {% if toggle == 0 %}
 <div class="panel panel-default">
@@ -62,10 +61,10 @@
           </button>
           <ul class="dropdown-menu">
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=0, toggle=0) }}">0 (stream)</a></li>
+              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=1, toggle=0) }}">1 sec</a></li>
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=2, toggle=0) }}">2 sec</a></li>
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=5, toggle=0) }}">5 sec</a></li>
-              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=10, toggle=0) }}">10 sec</a></li>
-              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=30, toggle=0) }}">30 sec</a></li>
+              <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=15, toggle=0) }}">15 sec</a></li>
           </ul>
       </div>
       <br>

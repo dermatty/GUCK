@@ -332,6 +332,9 @@ class MessageHandler:
                 rep0 = "GUCK already running"
 
             logger.info("GUCK resumed!")
+        elif r0s0 == "gettgmode":
+            ret = self.get_tgmode()
+            rep0 = ret
         elif r0s0 == "tgmode":
             try:
                 tgmode = r0s[1].lower()
