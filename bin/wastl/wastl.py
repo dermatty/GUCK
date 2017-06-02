@@ -58,15 +58,12 @@ users = read_hashfile(hashfile)
 class Camera(object):
     def __init__(self, camnr, interval=0):
         self.interval = interval
-        
         cursor = DB.db_getall("cameras")
         cameralist = [cn["url"] for cn in cursor]
-        self.username = "admin"
-        self.password = "pascal29"
         self.surl = cameralist[camnr]
         #self.cap = cv2.VideoCapture(self.surl)
         #self.stream = urllib.request.urlopen(urllib.request.Request(self.surl))
-        self.r = requests.get(self.surl, auth=HTTPBasicAuth(self.username, self.password), stream=True)
+        self.r = requests.get(self.surl, stream=True)
         self.lasttime = time.time()
         self.bytes = b''
 
