@@ -2,7 +2,8 @@
 import sys
 sys.path.append("../../lib")
 
-from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect, Response
+from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect, Response, session
+from flask_session import Session
 from bson.objectid import ObjectId
 import os
 import models
@@ -38,13 +39,12 @@ except Exception as e:
 
 # start WastAlarmServer
 WAS = zenzlib.WastlAlarmClient()
-PHOTOLIST = []
-PHOTOLIST_LEN = 0
-GUCKSTATUS = False
 
 # init flask
 app = Flask(__name__)
 app.secret_key = "dfdsmdsv11nmDFSDfds"
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
 
 # Login Manager
 login_manager = flask_login.LoginManager()
@@ -160,7 +160,10 @@ def favicon():
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home", methods=['GET', 'POST'])
 def index():
-    print(flask_login.current_user.is_authenticated)
+    session["PHOTOLIST"] = []
+    session["PHOTOLIST_LEN"] = 0
+    session["GUCKSTATUS"] = False
+    # print(flask_login.current_user.is_authenticated)
     return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
 
 
@@ -258,11 +261,14 @@ def userlogout():
 @app.route("/detections", methods=['GET', 'POST'])
 @flask_login.login_required
 def detections():
-    global PHOTOLIST
-    global PHOTOLIST_LEN
+    # delete all files in directory
+    filelist = [f for f in os.listdir("./static/") if f.endswith(".jpg")]
+    for f in filelist:
+        os.remove("./static/" + f)
+
     detlist = []
-    for i, ple in enumerate(reversed(PHOTOLIST)):
-        if i > 5:
+    for i, ple in enumerate(reversed(session["PHOTOLIST"])):
+        if i > 10:
             break
         # save new .jpg
         frame, tm = ple
@@ -270,7 +276,7 @@ def detections():
         detlist.append((photoname, tm))
         fn = "./static/" + photoname
         cv2.imwrite(fn, frame)
-    PHOTOLIST_LEN = 0
+    session["PHOTOLIST_LEN"] = 0
     return render_template("detections.html", detlist=detlist)
 
 
@@ -281,7 +287,6 @@ def guck(menu1, param1):
     global socket
     global socketstate
     global DB
-    global PHOTOLIST
 
     if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status" or menu1 == "start":
         GUCK_PATH = DB.db_query("remote", "guck_path")
@@ -624,8 +629,6 @@ def guck(menu1, param1):
 @app.route("/_ajaxconfig", methods=["GET", "POST"])
 def _ajaxconfig():
     global DB
-    global PHOTOLIST_LEN
-    global GUCKSTATUS
     cmd = request.args.get("cmd")
     index = request.args.get("index", 0, type=int)
     if cmd == "delete":
@@ -680,17 +683,17 @@ def _ajaxconfig():
     elif cmd == "guckphoto":
         stat, data = WAS.get_from_guck()
         if stat:
-            PHOTOLIST_LEN += 1
+            session["PHOTOLIST_LEN"] += 1
             frame, tm = data
-            PHOTOLIST.append(data)
-            if len(PHOTOLIST) > 50:
-                del PHOTOLIST[0]
-                PHOTOLIST_LEN -= 1
+            session["PHOTOLIST"].append(data)
+            if len(session["PHOTOLIST"]) > 50:
+                del session["PHOTOLIST"][0]
+                session["PHOTOLIST_LEN"] -= 1
         if stat is False and data is not False:
-            GUCKSTATUS = False
+            session["GUCKSTATUS"] = False
         else:
-            GUCKSTATUS = True
-        result0 = render_template("guckphoto.html", nralarms=PHOTOLIST_LEN)
+            session["GUCKSTATUS"] = True
+        result0 = render_template("guckphoto.html", nralarms=session["PHOTOLIST_LEN"])
     elif cmd == "runtime_tgmode on" or cmd == "runtime_gettgmode" or cmd == "runtime_tgmode off":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")
@@ -712,7 +715,7 @@ def _ajaxconfig():
         result0 = res0
     else:
         result0 = ""
-    return jsonify(result=result0, status=GUCKSTATUS)
+    return jsonify(result=result0, status=session["GUCKSTATUS"])
 
 
 @app.route("/configmsg", methods=["GET", "POST"])
