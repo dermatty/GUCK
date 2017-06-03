@@ -28,17 +28,6 @@
              source.addEventListener('error', function(event) {
                  alert("Failed to connect to event stream. Is Redis running?");
              }, false);
-
-             /* function refresh_guckphotos() {
-                 $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "guckphoto"}, function(data) {
-                     var nr = data.result;
-                     var status = data.status;
-                     if (status == true) {
-                         $("#nralarms").html(nr);
-                     };
-                 });
-             };
-             setInterval(refresh_guckphotos, 2000);*/
          });
         </script>
         <nav class="navbar navbar-inverse navbar-custom">

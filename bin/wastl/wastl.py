@@ -47,6 +47,12 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config["REDIS_URL"] = "redis://ubuntuserver.iv.at"
 app.register_blueprint(sse, url_prefix='/stream')
 Session(app)
+with app.app_context():
+    session["PHOTOLIST"] = []
+    session["PHOTOLIST_LEN"] = 0
+    session["GUCKSTATUS"] = False
+
+
 
 # Login Manager
 login_manager = flask_login.LoginManager()
@@ -189,9 +195,6 @@ def favicon():
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home", methods=['GET', 'POST'])
 def index():
-    session["PHOTOLIST"] = []
-    session["PHOTOLIST_LEN"] = 0
-    session["GUCKSTATUS"] = False
     return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
 
 
@@ -708,20 +711,6 @@ def _ajaxconfig():
         camerasform = models.CamerasForm(request.form)
         camerasform.populate_with_defaults(DB)
         result0 = render_template("config_camedit.html", camerasform=camerasform, camedit_action="add")
-    elif cmd == "guckphoto":
-        stat, data = WAS.get_from_guck()
-        if stat:
-            session["PHOTOLIST_LEN"] += 1
-            frame, tm = data
-            session["PHOTOLIST"].append(data)
-            if len(session["PHOTOLIST"]) > 50:
-                del session["PHOTOLIST"][0]
-                session["PHOTOLIST_LEN"] -= 1
-        if stat is False and data is not False:
-            session["GUCKSTATUS"] = False
-        else:
-            session["GUCKSTATUS"] = True
-        result0 = render_template("guckphoto.html", nralarms=session["PHOTOLIST_LEN"])
     elif cmd == "runtime_tgmode on" or cmd == "runtime_gettgmode" or cmd == "runtime_tgmode off":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")
