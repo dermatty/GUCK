@@ -4,6 +4,8 @@ sys.path.append("../../lib")
 
 from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect, Response, session
 from flask_session import Session
+from flask_sse import sse
+from threading import Thread
 from bson.objectid import ObjectId
 import os
 import models
@@ -37,13 +39,13 @@ except Exception as e:
     print(str(e) + ": Cannot get WASTL config for DB, exiting ...")
     sys.exit()
 
-# start WastAlarmServer
-WAS = zenzlib.WastlAlarmClient()
 
 # init flask
 app = Flask(__name__)
 app.secret_key = "dfdsmdsv11nmDFSDfds"
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config["REDIS_URL"] = "redis://ubuntuserver.iv.at"
+app.register_blueprint(sse, url_prefix='/stream')
 Session(app)
 
 # Login Manager
@@ -55,27 +57,24 @@ hashfile = "../../data/hash.pw"
 users = read_hashfile(hashfile)
 
 
+# Camera: http url jpg
 class Camera(object):
     def __init__(self, camnr, interval=0):
         self.interval = interval
         cursor = DB.db_getall("cameras")
         cameralist = [cn["url"] for cn in cursor]
         self.surl = cameralist[camnr]
-        #self.cap = cv2.VideoCapture(self.surl)
-        #self.stream = urllib.request.urlopen(urllib.request.Request(self.surl))
         self.r = requests.get(self.surl, stream=True)
         self.lasttime = time.time()
         self.bytes = b''
 
     def restart(self):
-        self.r = requests.get(self.surl, auth=HTTPBasicAuth(self.username, self.password), stream=True)
-        #self.bytes = b''
+        self.r = requests.get(self.surl, stream=True)
 
     def get_frame(self):
-        # while True:
         try:
             for chunk in self.r.iter_content(chunk_size=1024):
-                self.bytes += chunk   # self.stream.read(1024)
+                self.bytes += chunk
                 a = self.bytes.find(b'\xff\xd8')
                 b = self.bytes.find(b'\xff\xd9')
                 if a != -1 and b != -1:
@@ -92,6 +91,7 @@ class Camera(object):
             return False, None
 
 
+# Camera stream with yield
 def gen(camera):
     global frame0
     while True:
@@ -104,6 +104,37 @@ def gen(camera):
             return
 
 
+# start WastlAlarmClient Thread
+class PushThread(Thread):
+    def __init__(self):
+        Thread.__init__(self)
+        self.daemon = True
+        self.was = zenzlib.WastlAlarmClient()
+
+        def run(self):
+            while True:
+                stat, data = self.was.get_from_guck()
+                if stat:
+                    with app.app_context():
+                        session["PHOTOLIST_LEN"] += 1
+                    frame, tm = data
+                    with app.app_context():
+                        session["PHOTOLIST"].append(data)
+                        if len(session["PHOTOLIST"]) > 50:
+                            del session["PHOTOLIST"][0]
+                            session["PHOTOLIST_LEN"] -= 1
+                        result0 = render_template("guckphoto.html", nralarms=session["PHOTOLIST_LEN"])
+                        sse.publish({"message": result0}, type='nrdetections')
+                if stat is False and data is not False:
+                    with app.app_context():
+                        session["GUCKSTATUS"] = False
+                else:
+                    with app.app_context():
+                        session["GUCKSTATUS"] = True
+                time.sleep(0.2)
+
+
+# Login Manager
 class User(flask_login.UserMixin):
     pass
 
@@ -124,15 +155,11 @@ def request_loader(request):
         return
     user = User()
     user.id = email
-
-    # DO NOT ever store passwords in plaintext and always compare password
-    # hashes using constant-time comparison!
     user.is_authenticated = check_password(users[email]['pw'], request.form["pw"])
     return user
 
 
 # helper functions
-
 def save_and_prepare_forms(db0, form0, formlist):
     for f in formlist:
         if f == form0:
@@ -149,6 +176,7 @@ def flash_errors(form):
             ))
 
 
+# Routes
 @app.route("/wastl.png")
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'), 'wastl.ico', mimetype='image/vnd.microsoft.icon')
