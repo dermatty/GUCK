@@ -111,27 +111,31 @@ class PushThread(Thread):
         self.daemon = True
         self.was = zenzlib.WastlAlarmClient()
 
-        def run(self):
-            while True:
-                stat, data = self.was.get_from_guck()
-                if stat:
-                    with app.app_context():
-                        session["PHOTOLIST_LEN"] += 1
-                    frame, tm = data
-                    with app.app_context():
-                        session["PHOTOLIST"].append(data)
-                        if len(session["PHOTOLIST"]) > 50:
-                            del session["PHOTOLIST"][0]
-                            session["PHOTOLIST_LEN"] -= 1
-                        result0 = render_template("guckphoto.html", nralarms=session["PHOTOLIST_LEN"])
-                        sse.publish({"message": result0}, type='nrdetections')
-                if stat is False and data is not False:
-                    with app.app_context():
-                        session["GUCKSTATUS"] = False
-                else:
-                    with app.app_context():
-                        session["GUCKSTATUS"] = True
-                time.sleep(0.2)
+    def run(self):
+        while True:
+            stat, data = self.was.get_from_guck()
+            if stat:
+                with app.app_context():
+                    session["PHOTOLIST_LEN"] += 1
+                frame, tm = data
+                with app.app_context():
+                    session["PHOTOLIST"].append(data)
+                    if len(session["PHOTOLIST"]) > 50:
+                        del session["PHOTOLIST"][0]
+                        session["PHOTOLIST_LEN"] -= 1
+                    result0 = render_template("guckphoto.html", nralarms=session["PHOTOLIST_LEN"])
+                    sse.publish({"message": result0}, type='nrdetections')
+            if stat is False and data is not False:
+                with app.app_context():
+                    session["GUCKSTATUS"] = False
+            else:
+                with app.app_context():
+                    session["GUCKSTATUS"] = True
+            time.sleep(0.5)
+
+
+pu = PushThread()
+pu.start()
 
 
 # Login Manager
@@ -188,7 +192,6 @@ def index():
     session["PHOTOLIST"] = []
     session["PHOTOLIST_LEN"] = 0
     session["GUCKSTATUS"] = False
-    # print(flask_login.current_user.is_authenticated)
     return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
 
 
