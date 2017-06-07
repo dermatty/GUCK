@@ -47,11 +47,6 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config["REDIS_URL"] = "redis://ubuntuserver.iv.at"
 app.register_blueprint(sse, url_prefix='/stream')
 Session(app)
-with app.app_context():
-    session["PHOTOLIST"] = []
-    session["PHOTOLIST_LEN"] = 0
-    session["GUCKSTATUS"] = False
-
 
 
 # Login Manager
@@ -112,36 +107,42 @@ def gen(camera):
 
 # start WastlAlarmClient Thread
 class PushThread(Thread):
-    def __init__(self):
+    def __init__(self, app):
         Thread.__init__(self)
         self.daemon = True
         self.was = zenzlib.WastlAlarmClient()
+        self.guckstatus = None
+        self.photolist = []
+        self.photolist_len = 0
+        self.app = app
 
     def run(self):
         while True:
             stat, data = self.was.get_from_guck()
-            if stat:
-                with app.app_context():
-                    session["PHOTOLIST_LEN"] += 1
-                frame, tm = data
-                with app.app_context():
-                    session["PHOTOLIST"].append(data)
-                    if len(session["PHOTOLIST"]) > 50:
-                        del session["PHOTOLIST"][0]
-                        session["PHOTOLIST_LEN"] -= 1
-                    result0 = render_template("guckphoto.html", nralarms=session["PHOTOLIST_LEN"])
-                    sse.publish({"message": result0}, type='nrdetections')
-            if stat is False and data is not False:
-                with app.app_context():
-                    session["GUCKSTATUS"] = False
-            else:
-                with app.app_context():
-                    session["GUCKSTATUS"] = True
+            try:
+                if stat:
+                    self.photolist_len += 1
+                    frame, tm = data
+                    self.photolist.append(data)
+                    if len(self.photolist) > 50:
+                        del self.photolist[0]
+                        self.photolist_len -= 1
+                    with self.app.app_context():
+                        result0 = render_template("guckphoto.html", nralarms=self.photolist_len)
+                        sse.publish({"message": result0}, type='nrdetections')
+                        print(">>", result0)
+                if stat is False and data is not False:
+                    self.guckstatus = False
+                else:
+                    self.guckstatus = True
+            except Exception as e:
+                print("mot ok " + str(time.time()) + ": " + str(e))
+                pass
             time.sleep(0.5)
 
 
-pu = PushThread()
-pu.start()
+PUSHT = PushThread(app)
+PUSHT.start()
 
 
 # Login Manager
@@ -660,6 +661,7 @@ def guck(menu1, param1):
 @app.route("/_ajaxconfig", methods=["GET", "POST"])
 def _ajaxconfig():
     global DB
+    global PUSHT
     cmd = request.args.get("cmd")
     index = request.args.get("index", 0, type=int)
     if cmd == "delete":
@@ -732,7 +734,7 @@ def _ajaxconfig():
         result0 = res0
     else:
         result0 = ""
-    return jsonify(result=result0, status=session["GUCKSTATUS"])
+    return jsonify(result=result0, status=PUSHT.guckstatus)
 
 
 @app.route("/configmsg", methods=["GET", "POST"])
