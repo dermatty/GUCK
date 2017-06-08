@@ -2,7 +2,7 @@
 import sys
 sys.path.append("../../lib")
 
-from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect, Response, session
+from flask import Flask, render_template, request, send_from_directory, jsonify, flash, url_for, redirect, Response, session, g
 from flask_session import Session
 from flask_sse import sse
 from threading import Thread
@@ -115,6 +115,7 @@ class PushThread(Thread):
         self.photolist = []
         self.photolist_len = 0
         self.app = app
+        self.stop = True
 
     def run(self):
         while True:
@@ -134,9 +135,15 @@ class PushThread(Thread):
                 if stat is False and data is not False:
                     self.guckstatus = False
                 else:
-                    self.guckstatus = True
+                    if not self.guckstatus:
+                        self.guckstatus = True
+                        self.photolist = []
+                        self.photolist_len = 0
+                        with self.app.app_context():
+                            result0 = render_template("guckphoto.html", nralarms=self.photolist_len)
+                            sse.publish({"message": result0}, type='nrdetections')
             except Exception as e:
-                print("mot ok " + str(time.time()) + ": " + str(e))
+                print("Error @ " + str(time.time()) + ": " + str(e))
                 pass
             time.sleep(0.5)
 
@@ -265,7 +272,6 @@ def userlogin():
         userloginform = models.UserLoginForm(request.form)
         email = userloginform.email.data
         pw = userloginform.password.data
-        # print(">>>>" + email + " " + pw)
         try:
             pw_hash = users[email]["pw"]
         except:
@@ -293,13 +299,14 @@ def userlogout():
 @app.route("/detections", methods=['GET', 'POST'])
 @flask_login.login_required
 def detections():
+    global PUSHT
     # delete all files in directory
     filelist = [f for f in os.listdir("./static/") if f.endswith(".jpg")]
     for f in filelist:
         os.remove("./static/" + f)
 
     detlist = []
-    for i, ple in enumerate(reversed(session["PHOTOLIST"])):
+    for i, ple in enumerate(reversed(PUSHT.photolist)):
         if i > 10:
             break
         # save new .jpg
