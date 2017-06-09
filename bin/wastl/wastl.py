@@ -131,7 +131,6 @@ class PushThread(Thread):
                     with self.app.app_context():
                         result0 = render_template("guckphoto.html", nralarms=self.photolist_len)
                         sse.publish({"message": result0}, type='nrdetections')
-                        print(">>", result0)
                 if stat is False and data is not False:
                     self.guckstatus = False
                 else:
@@ -145,22 +144,24 @@ class PushThread(Thread):
             except Exception as e:
                 print("Error @ " + str(time.time()) + ": " + str(e))
                 pass
-            # print(USER)
             time.sleep(0.5)
 
 
 PUSHT = PushThread(app)
 PUSHT.start()
 
-USER = None
-
 
 @app.before_request
 def beforerequest():
-    global USER
-    g.user = flask_login.current_user.get_id()
-    if g.user is not None:
-        USER = g.user
+    try:
+        user0 = flask_login.current_user.get_id()
+        g.user = user0
+        if user0 is not None:
+            if not DB.db_find_one("userdata", "user", user0):
+                DB.db_open_one("userdata", {"user": user0, "no_newdetections": 0, "photolist": []})
+    except Exception as e:
+        print(str(e))
+        pass
 
 
 # Login Manager
@@ -275,12 +276,10 @@ def zenz():
 
 @app.route("/userlogin", methods=['GET', 'POST'])
 def userlogin():
-    print(">>>>>>>>>>>>>><")
     if request.method == "GET":
         userloginform = models.UserLoginForm(request.form)
         return render_template("login.html", userloginform=userloginform, userauth=flask_login.current_user.is_authenticated)
     else:
-        print("---------------")
         users = read_hashfile(hashfile)
         userloginform = models.UserLoginForm(request.form)
         email = userloginform.email.data
@@ -305,7 +304,9 @@ def unauthorized_handler():
 @app.route("/userlogout", methods=['GET', 'POST'])
 @flask_login.login_required
 def userlogout():
+    global USER
     flask_login.logout_user()
+    USER = None
     return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
 
 

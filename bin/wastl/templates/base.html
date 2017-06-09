@@ -68,7 +68,7 @@
                     {% if userauth == false %}
                     <li><a href="#" onclick="location.href='{{ url_for('userlogin') }}'"><span class="glyphicon glyphicon-log-in"></span>  Login</a></li>
                     {% else %}
-                    <li><a href="#"><span class="glyphicon glyphicon-user"></span></a></li>
+                    <li><a href="#"><span class="glyphicon glyphicon-user"></span>{% if current_user.is_authenticated%} {{ current_user.get_id() }} {% endif %}</a></li>
                     <li><a href="#" onclick="location.href='{{ url_for('userlogout') }}'"><span class="glyphicon glyphicon-log-out"></span>  Logout</a></li>
                     {% endif %}
             </div>
