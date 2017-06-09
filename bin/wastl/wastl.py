@@ -116,6 +116,7 @@ class PushThread(Thread):
         self.photolist_len = 0
         self.app = app
         self.stop = True
+        # !!!! self.DB = guckmongo.ConfigDB(dburl, dbname)
 
     def run(self):
         while True:
