@@ -145,11 +145,22 @@ class PushThread(Thread):
             except Exception as e:
                 print("Error @ " + str(time.time()) + ": " + str(e))
                 pass
+            # print(USER)
             time.sleep(0.5)
 
 
 PUSHT = PushThread(app)
 PUSHT.start()
+
+USER = None
+
+
+@app.before_request
+def beforerequest():
+    global USER
+    g.user = flask_login.current_user.get_id()
+    if g.user is not None:
+        USER = g.user
 
 
 # Login Manager
@@ -264,10 +275,12 @@ def zenz():
 
 @app.route("/userlogin", methods=['GET', 'POST'])
 def userlogin():
+    print(">>>>>>>>>>>>>><")
     if request.method == "GET":
         userloginform = models.UserLoginForm(request.form)
         return render_template("login.html", userloginform=userloginform, userauth=flask_login.current_user.is_authenticated)
     else:
+        print("---------------")
         users = read_hashfile(hashfile)
         userloginform = models.UserLoginForm(request.form)
         email = userloginform.email.data
