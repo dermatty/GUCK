@@ -33,11 +33,11 @@ import numpy as np
 import signal
 import configparser
 from Sunset import Sun
+from git import Repo
 
 
 __author__ = "Stephan Untergrabner"
 __license__ = "GPLv3"
-__version__ = "2.3 - git master"
 
 # try to get config for DB
 try:
@@ -50,7 +50,7 @@ except Exception as e:
     print(str(e) + ": Cannot get config for mongoDB, exiting ...")
     sys.exit()
 
-# get & set GUCK_HOME
+# get & set GUCK_HOME & VERSION
 try:
         _guck_home = _DB.db_query("basic", "guck_home")
 except Exception as e:
@@ -61,6 +61,7 @@ if _guck_home == -1:
         sys.exit()
 if _guck_home[-1] != "/":
         _guck_home += "/"
+__version__ = Repo(_guck_home)
 os.environ["GUCK_HOME"] = _guck_home
 os.environ["GUCK_VERSION"] = __version__
 GUCK_HOME = os.environ["GUCK_HOME"]
