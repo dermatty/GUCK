@@ -111,59 +111,68 @@ class PushThread(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.was = zenzlib.WastlAlarmClient()
-        self.guckstatus = None
-        self.photolist = []
-        self.photolist_len = 0
         self.app = app
         self.stop = True
         self.DB = DB0
         self.timeout = timeout
-        
+
     def run(self):
         while True:
+            sent = False
             stat, data = self.was.get_from_guck()
             try:
                 # guck is running and data received
                 if stat:
                     frame, tm = data
-                    self.photolist_len += 1
                     cursor = self.DB.db.userdata.find()
+                    sent = True
+                    self.guckstatus = True
                     for userd in cursor:
                         user0 = userd["user"]
                         active = userd["active"]
                         if active:
+                            # append photolist and increase no_newdetections
                             newd = userd["no_newdetections"] + 1
-                            print(user0, newd)
                             self.DB.db_update2("userdata", "user", user0, "no_newdetections", newd)
                             photol = userd["photolist"]
-                            data0 = dill.dumps(frame), tm
-                            photol.append(data0)
+                            # data0 = dill.dumps(frame), tm
+                            photol.append(tm)
                             if len(photol) > 50:
                                 del photol[0]
                             self.DB.db_update2("userdata", "user", user0, "photolist", photol)
-
-                    # self.photolist.append(data)
-                    # if len(self.photolist) > 50:
-                    # del self.photolist[0]
-                    # self.photolist_len -= 1
-                            # only send to current active user
+                            DB.db_open_one("photodata", {"tm": tm, "frame": dill.dumps(frame)})
+                            # only send to current active user: nralarms and guckstatus="on"
                             with self.app.app_context():
-                                result0 = render_template("guckphoto.html", nralarms=newd)
+                                result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="bark")
                                 type0 = "nrdet_" + user0
-                                print(type0)
                                 sse.publish({"message": result0}, type=type0)
-                # guck not running
+                            # if more than 100 photos, delete oldest in photodata
+                            if DB.db_count("photodata") > 50:
+                                mintm = DB.db_find_min("photodata", "tm")
+                                DB.db_delete_one("photodata", "tm", mintm)
+
+                # guck not running -> send sse "guckstatus: off" (red) to all users
                 if stat is False and data is not False:
                     self.guckstatus = False
-                # guck running but no data received
+                    with self.app.app_context():
+                        result0 = render_template("guckphoto.html", nralarms=0, guckstatus="off", dackel="nobark")
+                        type0 = "guck"
+                        # print(type0)
+                        sse.publish({"message": result0}, type=type0)
+                # guck running but no data received and no data sent -> send sse "on" ()
                 else:
-                    if not self.guckstatus:
+                    if not sent:
+                        cursor = self.DB.db.userdata.find()
                         self.guckstatus = True
-                        self.photolist = []
-                        self.photolist_len = 0
-                        with self.app.app_context():
-                            result0 = render_template("guckphoto.html", nralarms=self.photolist_len)
-                            sse.publish({"message": result0}, type='nrdetections')
+                        for userd in cursor:
+                            user0 = userd["user"]
+                            active = userd["active"]
+                            newd = userd["no_newdetections"]
+                            if active:
+                                with self.app.app_context():
+                                    result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="nobark")
+                                    type0 = "nrdet_" + user0
+                                    sse.publish({"message": result0}, type=type0)
                 # if guck is running check for inactive users and set to inactive in case of
                 if self.guckstatus:
                     cursor = self.DB.db.userdata.find()
@@ -174,8 +183,7 @@ class PushThread(Thread):
                             DB.db_update2("userdata", "user", user0, "active", False)
             except Exception as e:
                 print("Error @ " + str(time.time()) + ": " + str(e))
-                pass
-            time.sleep(0.5)
+            time.sleep(1)
 
 
 PUSHT = PushThread(app, DB)
@@ -183,6 +191,9 @@ PUSHT.start()
 cursor = DB.db.userdata.find()
 for userd in cursor:
     DB.db_delete_one("userdata", "user", userd["user"])
+cursor = DB.db.photodata.find()
+for photod in cursor:
+    DB.db_delete_one("photodata", "tm", photod["tm"])
 
 
 @app.before_request
@@ -351,23 +362,31 @@ def userlogout():
 @app.route("/detections", methods=['GET', 'POST'])
 @flask_login.login_required
 def detections():
-    global PUSHT
+    global DB
     # delete all files in directory
     filelist = [f for f in os.listdir("./static/") if f.endswith(".jpg")]
     for f in filelist:
         os.remove("./static/" + f)
-
     detlist = []
-    for i, ple in enumerate(reversed(PUSHT.photolist)):
-        if i > 10:
-            break
-        # save new .jpg
-        frame, tm = ple
-        photoname = "detphoto" + tm + ".jpg"
-        detlist.append((photoname, tm))
-        fn = "./static/" + photoname
-        cv2.imwrite(fn, frame)
-    session["PHOTOLIST_LEN"] = 0
+    cursor = DB.db.userdata.find()
+    for userd in cursor:
+        user0 = userd["user"]
+        if user0 == g.user:
+            photol = userd["photolist"]
+            thresh = 20
+            for i, tm in enumerate(reversed(photol)):
+                if i > thresh:
+                    break
+                try:
+                    framedill = DB.db_find_one("photodata", "tm", tm)["frame"]
+                    frame = dill.loads(framedill)
+                    photoname = "detphoto" + tm + ".jpg"
+                    detlist.append((photoname, tm))
+                    fn = "./static/" + photoname
+                    cv2.imwrite(fn, frame)
+                except:
+                    thresh += 1
+            DB.db_update2("userdata", "user", user0, "no_newdetections", 0)
     return render_template("detections.html", detlist=detlist)
 
 

@@ -43,6 +43,13 @@ class ConfigDB:
     def db_find_one(self, doc0, name, value):
         return self.db[doc0].find_one({name: value})
 
+    def db_find_min(self, doc0, name):
+        # sort=[("myfield", 1)])["myfield"]'
+        return self.db[doc0].find_one(sort=[(name, 1)])[name]
+
+    def db_count(self, doc0):
+        return self.db[doc0].count()
+
     def db_query(self, doc0, name, index=0):
         try:
             return self.db[doc0].find()[index][name]

@@ -21,14 +21,17 @@
          $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
          $(function() {
              var source = new EventSource("{{ url_for('sse.stream') }}");
-             var eventtype = "nrdet_" + {% if current_user.is_authenticated %} "{{ current_user.get_id() }}" {% endif %}
-             source.addEventListener(eventtype, function(event) {
+             var eventtype_nr = "nrdet_" + {% if current_user.is_authenticated %} "{{ current_user.get_id() }}" {% endif %}
+             var eventtype_guck = "guck"
+             source.addEventListener(eventtype_nr, function(event) {
                  var data = JSON.parse(event.data);
                  $("#nralarms").html(data.message);
              }, false);
-             source.addEventListener('error', function(event) {
-                 alert("Failed to connect to event stream. Is Redis running?");
+             source.addEventListener(eventtype_guck, function(event) {
+                 var data = JSON.parse(event.data);
+                 $("#nralarms").html(data.message);
              }, false);
+             source.addEventListener('error', function(event) { }, false);
          });
         </script>
         <nav class="navbar navbar-inverse navbar-custom">
@@ -69,7 +72,8 @@
                     {% if userauth == false %}
                     <li><a href="#" onclick="location.href='{{ url_for('userlogin') }}'"><span class="glyphicon glyphicon-log-in"></span>  Login</a></li>
                     {% else %}
-                    <li><a href="#"><span class="glyphicon glyphicon-user"></span>{% if current_user.is_authenticated%} {{ current_user.get_id() }} {% endif %}</a></li>
+                    {% set splitlist = current_user.get_id().split("@") %}
+                    <li><a href="#"><span class="glyphicon glyphicon-user"></span> {{ splitlist[0]|capitalize }}</a></li>
                     <li><a href="#" onclick="location.href='{{ url_for('userlogout') }}'"><span class="glyphicon glyphicon-log-out"></span>  Logout</a></li>
                     {% endif %}
             </div>
