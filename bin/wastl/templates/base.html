@@ -24,15 +24,18 @@
              var eventtype_nr = "nrdet_" + {% if current_user.is_authenticated %} "{{ current_user.get_id() }}" {% endif %}
              var eventtype_title = "title_" + {% if current_user.is_authenticated %} "{{ current_user.get_id() }}" {% endif %}
              var eventtype_guck = "guck"
+             // listener for showing nr_detections
              source.addEventListener(eventtype_nr, function(event) {
                  var data = JSON.parse(event.data);
                  $("#nralarms").html(data.message);
              }, false);
+             // listener for showing red
              source.addEventListener(eventtype_guck, function(event) {
                  var data = JSON.parse(event.data);
                  $("#nralarms").html(data.message);
                  document.title = "WASTL";
              }, false);
+             // listener for nr_detections in title_bar
              source.addEventListener(eventtype_title, function(event) {
                  var data = JSON.parse(event.data);
                  var nr = data.message;
