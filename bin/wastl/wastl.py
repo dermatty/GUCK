@@ -146,6 +146,8 @@ class PushThread(Thread):
                                 result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="bark")
                                 type0 = "nrdet_" + user0
                                 sse.publish({"message": result0}, type=type0)
+                                type0 = "title_" + user0
+                                sse.publish({"message": str(newd)}, type=type0)
                             # if more than 100 photos, delete oldest in photodata
                             if DB.db_count("photodata") > 50:
                                 mintm = DB.db_find_min("photodata", "tm")
@@ -173,6 +175,9 @@ class PushThread(Thread):
                                     result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="nobark")
                                     type0 = "nrdet_" + user0
                                     sse.publish({"message": result0}, type=type0)
+                                    type0 = "title_" + user0
+                                    sse.publish({"message": str(newd)}, type=type0)
+ 
                 # if guck is running check for inactive users and set to inactive in case of
                 if self.guckstatus:
                     cursor = self.DB.db.userdata.find()
