@@ -61,9 +61,14 @@ if _guck_home == -1:
         sys.exit()
 if _guck_home[-1] != "/":
         _guck_home += "/"
-__version__ = Repo(_guck_home)
+try:
+    __version__ = str(Repo(_guck_home).active_branch)
+    os.environ["GUCK_VERSION"] = __version__
+except:
+    __version__ = "current"
+    os.environ["GUCK_VERSION"] = __version__
 os.environ["GUCK_HOME"] = _guck_home
-os.environ["GUCK_VERSION"] = __version__
+
 GUCK_HOME = os.environ["GUCK_HOME"]
 
 # Init Logger
