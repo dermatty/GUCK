@@ -23,7 +23,7 @@ import json
 import numpy as np
 import urllib.request
 from requests.auth import HTTPBasicAuth
-
+import dill
 
 socketstate = None
 CHATEDIT_INDEX = -1
@@ -107,7 +107,7 @@ def gen(camera):
 
 # start WastlAlarmClient Thread
 class PushThread(Thread):
-    def __init__(self, app):
+    def __init__(self, app, DB0, timeout=7200):
         Thread.__init__(self)
         self.daemon = True
         self.was = zenzlib.WastlAlarmClient()
@@ -116,24 +116,46 @@ class PushThread(Thread):
         self.photolist_len = 0
         self.app = app
         self.stop = True
-        # !!!! self.DB = guckmongo.ConfigDB(dburl, dbname)
-
+        self.DB = DB0
+        self.timeout = timeout
+        
     def run(self):
         while True:
             stat, data = self.was.get_from_guck()
             try:
+                # guck is running and data received
                 if stat:
-                    self.photolist_len += 1
                     frame, tm = data
-                    self.photolist.append(data)
-                    if len(self.photolist) > 50:
-                        del self.photolist[0]
-                        self.photolist_len -= 1
-                    with self.app.app_context():
-                        result0 = render_template("guckphoto.html", nralarms=self.photolist_len)
-                        sse.publish({"message": result0}, type='nrdetections')
+                    self.photolist_len += 1
+                    cursor = self.DB.db.userdata.find()
+                    for userd in cursor:
+                        user0 = userd["user"]
+                        active = userd["active"]
+                        if active:
+                            newd = userd["no_newdetections"] + 1
+                            print(user0, newd)
+                            self.DB.db_update2("userdata", "user", user0, "no_newdetections", newd)
+                            photol = userd["photolist"]
+                            data0 = dill.dumps(frame), tm
+                            photol.append(data0)
+                            if len(photol) > 50:
+                                del photol[0]
+                            self.DB.db_update2("userdata", "user", user0, "photolist", photol)
+
+                    # self.photolist.append(data)
+                    # if len(self.photolist) > 50:
+                    # del self.photolist[0]
+                    # self.photolist_len -= 1
+                            # only send to current active user
+                            with self.app.app_context():
+                                result0 = render_template("guckphoto.html", nralarms=newd)
+                                type0 = "nrdet_" + user0
+                                print(type0)
+                                sse.publish({"message": result0}, type=type0)
+                # guck not running
                 if stat is False and data is not False:
                     self.guckstatus = False
+                # guck running but no data received
                 else:
                     if not self.guckstatus:
                         self.guckstatus = True
@@ -142,14 +164,25 @@ class PushThread(Thread):
                         with self.app.app_context():
                             result0 = render_template("guckphoto.html", nralarms=self.photolist_len)
                             sse.publish({"message": result0}, type='nrdetections')
+                # if guck is running check for inactive users and set to inactive in case of
+                if self.guckstatus:
+                    cursor = self.DB.db.userdata.find()
+                    for userd in cursor:
+                        lasttm = userd["lasttm"]
+                        if time.time() - lasttm > self.timeout:
+                            user0 = userd["user"]
+                            DB.db_update2("userdata", "user", user0, "active", False)
             except Exception as e:
                 print("Error @ " + str(time.time()) + ": " + str(e))
                 pass
             time.sleep(0.5)
 
 
-PUSHT = PushThread(app)
+PUSHT = PushThread(app, DB)
 PUSHT.start()
+cursor = DB.db.userdata.find()
+for userd in cursor:
+    DB.db_delete_one("userdata", "user", userd["user"])
 
 
 @app.before_request
@@ -159,7 +192,11 @@ def beforerequest():
         g.user = user0
         if user0 is not None:
             if not DB.db_find_one("userdata", "user", user0):
-                DB.db_open_one("userdata", {"user": user0, "no_newdetections": 0, "photolist": []})
+                DB.db_open_one("userdata", {"user": user0, "lasttm": time.time(), "active": True, "no_newdetections": 0,
+                                            "photolist": []})
+            else:
+                DB.db_update2("userdata", "user", user0, "lasttm", time.time())
+                DB.db_update2("userdata", "user", user0, "active", True)
     except Exception as e:
         print(str(e))
         pass

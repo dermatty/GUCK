@@ -21,7 +21,8 @@
          $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
          $(function() {
              var source = new EventSource("{{ url_for('sse.stream') }}");
-             source.addEventListener('nrdetections', function(event) {
+             var eventtype = "nrdet_" + {% if current_user.is_authenticated %} "{{ current_user.get_id() }}" {% endif %}
+             source.addEventListener(eventtype, function(event) {
                  var data = JSON.parse(event.data);
                  $("#nralarms").html(data.message);
              }, false);
