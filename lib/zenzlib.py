@@ -68,8 +68,11 @@ class ZenzLib:
         etec_killstr2 = self.REMOTE_VIRTUALENV + " -u -c import sys;exec(eval(sys.stdin.readline()))"
         killstr = "ssh " + hostn + " killall -9e " + "'" + etec_cmd1 + "'"
         killstr2 = "ssh " + hostn + " killall -9e " + "'" + etec_killstr2 + "'"
-        os.system(killstr)
-        os.system(killstr2)
+        try:
+            os.system(killstr)
+            os.system(killstr2)
+        except:
+            pass
 
     def shutdown(self):
         hostn = self.REMOTE_HOST_SHORT

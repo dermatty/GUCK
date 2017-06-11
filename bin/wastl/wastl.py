@@ -120,7 +120,6 @@ class PushThread(Thread):
     def run(self):
         while True:
             sent = False
-            print("---------------")
             stat, data, paused = self.was.get_from_guck()
             try:
                 # guck is running and data received
@@ -410,7 +409,7 @@ def guck(menu1, param1):
     global socketstate
     global DB
 
-    if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status" or menu1 == "start":
+    if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status" or menu1 == "start" or menu1 == "stop":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")
         REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
@@ -550,16 +549,10 @@ def guck(menu1, param1):
             rep0 = []
             param1 = "1"
         return render_template("system.html", rep0=rep0, param1=param1, menu1=menu1)
-    elif menu1 == "help":
-        # check connection to iotserver
-        sstr = "help"
-        stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
-        if stat:
-            rep0, repname, repfr = res0
-        else:
-            rep0 = res0
-        replist = rep0.split("\n")
-        return render_template("help.html", replist=replist, menu1=menu1)
+    elif menu1 == "stop":
+        ZENZL.killguck()
+        rep0 = ["Killing guck on " + REMOTE_HOST_SHORT]
+        return render_template("start.html", rep0=rep0)
     elif menu1 == "status":
         sstr = "status"
         stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
