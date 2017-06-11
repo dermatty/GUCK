@@ -120,6 +120,7 @@ class PushThread(Thread):
     def run(self):
         while True:
             sent = False
+            print("---------------")
             stat, data, paused = self.was.get_from_guck()
             try:
                 # guck is running and data received
@@ -134,7 +135,6 @@ class PushThread(Thread):
                     sent = True
                     self.guckstatus = True
                     for userd in cursor:
-                        print("-------------------------")
                         user0 = userd["user"]
                         active = userd["active"]
                         if active:
@@ -150,7 +150,6 @@ class PushThread(Thread):
                             DB.db_open_one("photodata", {"tm": tm, "frame": dill.dumps(frame)})
                             # only send to current active user: nralarms and guckstatus="on"
                             with self.app.app_context():
-                                print("barking ....")
                                 result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="bark")
                                 type0 = "nrdet_" + user0
                                 sse.publish({"message": result0}, type=type0)
@@ -180,12 +179,12 @@ class PushThread(Thread):
                                 newd = userd["no_newdetections"]
                                 if active:
                                     with self.app.app_context():
-                                        result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="nobark")
-                                        type0 = "nrdet_" + user0
+                                        result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on",
+                                                                  dackel="nobark")
+                                        type0 = "idle_" + user0
                                         sse.publish({"message": result0}, type=type0)
                                         type0 = "title_" + user0
                                         sse.publish({"message": str(newd)}, type=type0)
- 
                 # if guck is running check for inactive users and set to inactive in case of
                 if self.guckstatus:
                     cursor = self.DB.db.userdata.find()
