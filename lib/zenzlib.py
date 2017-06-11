@@ -18,18 +18,18 @@ class WastlAlarmClient:
         socket.RCVTIMEO = 300
         socket.send_string("REQ")
         try:
-            ret, r = socket.recv_pyobj()
+            ret, r, p = socket.recv_pyobj()
             socket.close()
             context.term()
             if ret:
-                return True, dill.loads(r)
+                return True, dill.loads(r), p
             else:
-                return False, False
+                return False, False, p
         except zmq.ZMQError as e:
             socket.close()
             context.term()
             time.sleep(0.1)
-            return False, "WASTL connection error: " + str(e)
+            return False, "WASTL connection error: " + str(e), False
 
 
 class ZenzLib:

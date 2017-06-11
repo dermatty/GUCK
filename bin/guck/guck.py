@@ -832,9 +832,12 @@ class GControl:
                     logger.info("Receiving quit ...")
                     break
                 if not self.SSHSERVER.alarmrunning():
+                    self.WAS.set_paused(True)
                     self.LASTPROC = time.time()
                     time.sleep(0.1)
                     continue
+                else:
+                    self.WAS.set_paused(False)
             except AttributeError:
                 pass
 

@@ -675,14 +675,19 @@ class WastlAlarmServer(Thread):
         self.socket.bind("tcp://*:7001")
         self.lock = lock
         self.inqueue = []
+        self.paused = False
+
+    def set_paused(self, status):
+            with self.lock:
+                self.paused = status
 
     def pop(self):
         if len(self.inqueue) > 0:
             with self.lock:
-                ret, r = True, self.inqueue.pop()
+                ret, r, p = True, self.inqueue.pop(), self.paused
         else:
-            ret, r = False, None
-        return ret, r
+            ret, r, p = False, None, self.paused
+        return ret, r, p
 
     def push(self, p):
         with self.lock:
@@ -693,8 +698,8 @@ class WastlAlarmServer(Thread):
     def run(self):
         while True:
             self.socket.recv_string()
-            ret, r = self.pop()
-            self.socket.send_pyobj((ret, r))
+            ret, r, p = self.pop()
+            self.socket.send_pyobj((ret, r, p))
 
 
 # SSH Server

@@ -115,19 +115,26 @@ class PushThread(Thread):
         self.stop = True
         self.DB = DB0
         self.timeout = timeout
+        self.guckstatus = False
 
     def run(self):
         while True:
             sent = False
-            stat, data = self.was.get_from_guck()
+            stat, data, paused = self.was.get_from_guck()
             try:
                 # guck is running and data received
-                if stat:
+                if paused:
+                    with self.app.app_context():
+                        result0 = render_template("guckphoto.html", nralarms=0, guckstatus="paused", dackel="nobark")
+                        type0 = "paused"
+                        sse.publish({"message": result0}, type=type0)
+                elif stat:
                     frame, tm = data
                     cursor = self.DB.db.userdata.find()
                     sent = True
                     self.guckstatus = True
                     for userd in cursor:
+                        print("-------------------------")
                         user0 = userd["user"]
                         active = userd["active"]
                         if active:
@@ -143,6 +150,7 @@ class PushThread(Thread):
                             DB.db_open_one("photodata", {"tm": tm, "frame": dill.dumps(frame)})
                             # only send to current active user: nralarms and guckstatus="on"
                             with self.app.app_context():
+                                print("barking ....")
                                 result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="bark")
                                 type0 = "nrdet_" + user0
                                 sse.publish({"message": result0}, type=type0)
@@ -152,31 +160,31 @@ class PushThread(Thread):
                             if DB.db_count("photodata") > 50:
                                 mintm = DB.db_find_min("photodata", "tm")
                                 DB.db_delete_one("photodata", "tm", mintm)
-
-                # guck not running -> send sse "guckstatus: off" (red) to all users
-                if stat is False and data is not False:
-                    self.guckstatus = False
-                    with self.app.app_context():
-                        result0 = render_template("guckphoto.html", nralarms=0, guckstatus="off", dackel="nobark")
-                        type0 = "guck"
-                        # print(type0)
-                        sse.publish({"message": result0}, type=type0)
-                # guck running but no data received and no data sent -> send sse "on" ()
-                else:
-                    if not sent:
-                        cursor = self.DB.db.userdata.find()
-                        self.guckstatus = True
-                        for userd in cursor:
-                            user0 = userd["user"]
-                            active = userd["active"]
-                            newd = userd["no_newdetections"]
-                            if active:
-                                with self.app.app_context():
-                                    result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="nobark")
-                                    type0 = "nrdet_" + user0
-                                    sse.publish({"message": result0}, type=type0)
-                                    type0 = "title_" + user0
-                                    sse.publish({"message": str(newd)}, type=type0)
+                if not paused:
+                    # guck not running -> send sse "guckstatus: off" (red) to all users
+                    if stat is False and data is not False:
+                        self.guckstatus = False
+                        with self.app.app_context():
+                            result0 = render_template("guckphoto.html", nralarms=0, guckstatus="off", dackel="nobark")
+                            type0 = "guck"
+                            # print(type0)
+                            sse.publish({"message": result0}, type=type0)
+                    # guck running but no data received and no data sent -> send sse "on" ()
+                    else:
+                        if not sent:
+                            cursor = self.DB.db.userdata.find()
+                            self.guckstatus = True
+                            for userd in cursor:
+                                user0 = userd["user"]
+                                active = userd["active"]
+                                newd = userd["no_newdetections"]
+                                if active:
+                                    with self.app.app_context():
+                                        result0 = render_template("guckphoto.html", nralarms=newd, guckstatus="on", dackel="nobark")
+                                        type0 = "nrdet_" + user0
+                                        sse.publish({"message": result0}, type=type0)
+                                        type0 = "title_" + user0
+                                        sse.publish({"message": str(newd)}, type=type0)
  
                 # if guck is running check for inactive users and set to inactive in case of
                 if self.guckstatus:

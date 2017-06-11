@@ -1,13 +1,17 @@
 {% if guckstatus == "on" %}
 <span class="badge" style="background: green;">{{ nralarms }}</span>
-{% else %}
-<span class="badge" style="background: red;">off</span>
-{% endif %}
-{% if guckstatus == "on" and nralarms > 0 and dackel == "bark" %}
+{% if dackel == "bark" %}
 <div id="player">
     <audio controls autoplay hidden>
         <source src="static/dackel.mp3" type="audio/mpeg">
         unsupported !! 
     </audio>
 </div>
+{% endif %}
+{% endif %}
+{% if guckstatus == "off" %}
+<span class="badge" style="background: red;">off</span>
+{% endif %}
+{% if guckstatus == "paused" %}
+<span class="badge" style="background: orange;">paused</span>
 {% endif %}
