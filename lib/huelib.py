@@ -141,6 +141,12 @@ class Hue:
 
 
 if __name__ == "__main__":
+    # HUE test main
+    #    - delete all groups and schedules
+    #    - set up new group with all lights
+    #    - turn group (=all lights) off
+    #    - set allweek schedule: turn on in 2 mins, turn off in 4 mins
+
     hue = Hue()
 
     # set up everything new
