@@ -855,10 +855,23 @@ def configmsg():
     return jsonify(feedback=f)
 
 
-@app.route("/hue")
+# @app.route("/hue/<sel>/", defaults={"param1": "0"}, methods=['GET', 'POST'])
+@app.route("/hue/", defaults={"selected_s": "0"}, methods=['GET', 'POST'])
+@app.route("/hue/<selected_s>/", methods=['GET', 'POST'])
 @flask_login.login_required
-def hue():
-    return render_template("hue.html", selected="2")
+def hue(selected_s="0"):
+    # if called without parameter it's initial call, get schedule from DB
+    if selected_s == "0":
+        sel = "1"
+        try:
+            hue_sched = DB.db_query("hue", "schedule")
+        except:
+            sel = "1"
+        if hue_sched == "-1":
+            sel = "1"
+        return render_template("hue.html", selected=sel)
+    else:
+        return render_template("hue.html", selected=str(selected_s))
 
 
 if __name__ == "__main__":
