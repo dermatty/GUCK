@@ -1,4 +1,71 @@
 {% extends "base.html" %}
 {% set active_nav = "hue" %}
 
-{% block title0 %}Menu: Hue{% endblock %}
+{% block repstr %}
+<div class="panel panel-default">
+    <div class="panel-heading" style="font-size:18px;">Guck Runtime Settings</div>
+    <div class="panel-body">
+        <br>
+        {# Hue on/off #}
+        <div class="row">
+            <div class="col-sm-2">
+                Hue Lights On/Off:
+            </div>
+            <div class="col-sm-3">
+                <div class="btn-group" id="toggle1hue">
+                    <button type="button" class="btn btn-info locked_active">OFF</button>
+                    <button type="button" class="btn btn-default unlocked_inactive">ON</button>
+                </div>
+            </div>
+        </div>
+        <br>
+        <hr>
+        <br>
+        <div class="container">
+            <form>
+                <label for="sel1">Select Hue Schedule (select one):</label>
+                <div class="form-inline" role="form">
+                    <select class="form-control" style="width: 260px;" id="sel1">
+                        <option value='1' {% if param1 == '1' %}selected{% endif %}>-- NONE --</option>
+                        <option value='2' {% if param1 == '2' %}selected{% endif %}>All Week</option>
+                        <option value='3' {% if param1 == '3' %}selected{% endif %}>All Weekdays fixed</option>
+                        <option value='4' {% if param1 == '4' %}selected{% endif %}>All Weekdays random</option>
+                        <option value='5' {% if param1 == '5' %}selected{% endif %}>On GUCK Alert</option>
+                    </select>
+                    <button class="btn btn-primary" type="button" onclick="buttononclick2()">GO!</button>
+                </div>
+            </form>
+        </div>
+    </div>  {# panel body #}
+</div> {# panel heading #}
+</div> {# panel default #}
+
+<script type=text/javascript>
+ $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+ // Toggle Hue on/off
+ $(function() {
+     $('#toggle1hue button').click(function(){
+         if($(this).hasClass('locked_active') || $(this).hasClass('unlocked_inactive')){
+             $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "hue_on"}, function(data) {
+                 var html0 = data.result;
+	         }); 
+         } else {
+             $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "hue_off"}, function(data) {
+                 var html0 = data.result;
+	         });
+	     } 
+	     /* reverse locking status */
+	     $('#toggle1hue button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
+	     $('#toggle1hue button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
+     });
+     $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "hue_getonoff"}, function(data) {
+         var res = data.result;
+         if (res) {
+             $('#toggle1hue button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
+	         $('#toggle1hue button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
+         };
+	 });
+ });
+
+</script>
+{% endblock %}

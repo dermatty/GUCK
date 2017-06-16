@@ -778,7 +778,8 @@ class GControl:
         # start ssh server
         logger.info("Starting SSH server ...")
         self.SSHSERVER.start()
-        self.SSHSERVER.set_tgmode(self.TELEGRAM_MODE)
+        ret = self.SSHSERVER.set_tgmode(self.TELEGRAM_MODE)
+        logger.info("Set TG Mode to " + str(ret) + "/" + str(self.TELEGRAM_MODE))
         self.SSHSERVER.set_aimode(self.AI_MODE)
         self.SSHSERVER.set_aisens(self.AI_SENS)
         self.SSHSERVER.set_nightmode(self.NIGHTMODE)

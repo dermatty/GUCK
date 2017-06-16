@@ -16,6 +16,7 @@ import requests
 import configparser
 import guckmongo
 import zenzlib
+import huelib
 import threading
 import flask_login
 from hasher import hash_password, check_password, read_hashfile, write_hashfile
@@ -39,6 +40,8 @@ except Exception as e:
     print(str(e) + ": Cannot get WASTL config for DB, exiting ...")
     sys.exit()
 
+# init Hue
+HUE = huelib.Hue()
 
 # init flask
 app = Flask(__name__)
@@ -143,8 +146,6 @@ class PushThread(Thread):
                             photol = userd["photolist"]
                             # data0 = dill.dumps(frame), tm
                             photol.append(tm)
-                            if len(photol) > 50:
-                                del photol[0]
                             self.DB.db_update2("userdata", "user", user0, "photolist", photol)
                             DB.db_open_one("photodata", {"tm": tm, "frame": dill.dumps(frame)})
                             # only send to current active user: nralarms and guckstatus="on"
@@ -154,10 +155,18 @@ class PushThread(Thread):
                                 sse.publish({"message": result0}, type=type0)
                                 type0 = "title_" + user0
                                 sse.publish({"message": str(newd)}, type=type0)
-                            # if more than 100 photos, delete oldest in photodata
-                            if DB.db_count("photodata") > 50:
+                            # if more than x photos, delete oldest in photodata and userdata[photolist]
+                            if DB.db_count("photodata") > 5:
+                                # delete oldest entry in photodata
                                 mintm = DB.db_find_min("photodata", "tm")
+                                print(mintm)
                                 DB.db_delete_one("photodata", "tm", mintm)
+                                # delete also from all active users photolist
+                                for userd2 in cursor:
+                                    user2 = userd2["user"]
+                                    photol = userd2["photolist"]
+                                    photol.remove(mintm)
+                                    self.DB.db_update2("userdata", "user", user2, "photolist", photol)
                 if not paused:
                     # guck not running -> send sse "guckstatus: off" (red) to all users
                     if stat is False and data is not False:
@@ -745,6 +754,7 @@ def guck(menu1, param1):
 def _ajaxconfig():
     global DB
     global PUSHT
+    global HUE
     cmd = request.args.get("cmd")
     index = request.args.get("index", 0, type=int)
     if cmd == "delete":
@@ -815,6 +825,23 @@ def _ajaxconfig():
             sstr = "gettgmode"
         stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
         result0 = res0
+    elif cmd == "hue_getonoff":
+        g = HUE.get_all_groups()
+        gs = HUE.get_groups_status(g)
+        stat = True
+        for gs0 in gs:
+            if not gs0:
+                stat = False
+                break
+        return jsonify(result=stat)
+    elif cmd == "hue_on":
+        g = HUE.get_all_groups()
+        HUE.set_groups_on(g)
+        return jsonify(result=True)
+    elif cmd == "hue_off":
+        g = HUE.get_all_groups()
+        HUE.set_groups_off(g)
+        return jsonify(result=False)
     else:
         result0 = ""
     return jsonify(result=result0, status=PUSHT.guckstatus)
@@ -828,10 +855,10 @@ def configmsg():
     return jsonify(feedback=f)
 
 
-@app.route("/hue/<menu1>")
+@app.route("/hue")
 @flask_login.login_required
-def hue(menu1):
-    return render_template("index.html")
+def hue():
+    return render_template("hue.html", selected="2")
 
 
 if __name__ == "__main__":

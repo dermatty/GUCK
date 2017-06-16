@@ -2,7 +2,7 @@ from qhue import Bridge
 import requests
 import json
 from datetime import datetime
-
+import random
 
 class Hue:
     def __init__(self, ip="192.168.1.247", username="qxhVgcSwVwIymX7OhX4KQYqt9v8QP8whdr2ecX4Y"):
@@ -119,7 +119,7 @@ class Hue:
         r = requests.post(url, json.dumps(body), timeout=5)
         return r.json()
 
-    def set_schedule(self, timercmd, g, mins, on):
+    def set_schedule(self, timercmd, g, mins, on, ww="0b01111111"):
         # timercmd: "timer", "allweek", "weekdays"
         hhstr, mmstr, ssstr = self.convert_mins_to_str(mins)
         if timercmd == "allweek":
@@ -130,8 +130,45 @@ class Hue:
         elif timercmd == "weekdays":
             w = str(int("0b01111100", 2))
             lt = "W" + w + "/T" + hhstr + ":" + mmstr + ":" + ssstr
+        elif timercmd == "oneoff":
+            lt = "W" + ww + "/T" + hhstr + ":" + mmstr + ":" + ssstr
         r = self.set_schedule_request(g, lt, on)
         return r
+
+    def sethue_timestr(self, nr):
+        # weekday: 1 = Monday, 2 = Tuesday, ...
+        w = "0b00000000"
+        if nr + 2 > len(w):
+            nr = 1
+        try:
+            w_new = w[:nr+1] + "1" + w[nr+3:]
+        except:
+            w_new = w[:nr+1] + "1"
+        w0 = str(int(w_new, 2))
+        return w0
+
+    def set_weekly_random_schedules(self, g, start_mins, duration_mins, start_random_t, duration_random_t):
+        # generates 7 schedules for every of day of the week
+        for i in range(1):
+            weekday = i + 1
+            w0 = self.sethue_timestr(weekday)
+            # start
+            start0 = start_mins + random.randint(-start_random_t, start_random_t)
+            if start0 > 24*60:
+                start0 -= 24*60
+                weekday += 1
+                w0 = self.sethue_timestr(weekday)
+            self.set_schedule("oneoff", g, start0, True, ww=w0)
+            # end
+            dur = duration_mins + random.randint(-duration_random_t, duration_random_t)
+            if dur < 0:
+                dur = 5
+            end0 = start0 + dur
+            if end0 > 24*60:
+                end0 -= 24*60
+                weekday += 1
+                w0 = self.sethue_timestr(weekday)
+            self.set_schedule("oneoff", g, end0, False, ww=w0)
 
     def set_schedule_allweek(self, g, mins, on):
         return self.set_schedule("allweek", g, mins, on)
@@ -155,12 +192,15 @@ if __name__ == "__main__":
     l = hue.get_lights()
     print("Set new group:", hue.set_new_group(l))
     gl = hue.get_all_groups()
-    hue.set_groups_off(gl)
+    hue.set_groups_on(gl)
 
     # set new schedules: turn all groups on in 2 mins and off in 4 mins
     for g in gl:
-        now = datetime.now()
-        starttime = now.hour * 60 + now.minute + 2
-        enddtime = now.hour * 60 + now.minute + 4
-        print(hue.set_schedule_allweek(g, starttime, True))
-        print(hue.set_schedule_allweek(g, enddtime, False))
+        #now = datetime.now()
+        #starttime = now.hour * 60 + now.minute + 2
+        #enddtime = now.hour * 60 + now.minute + 4
+        # for every weekday random sched.: 19.30h +/- 45 min for 5 hours +/- 45 min
+        hue.set_weekly_random_schedules(g, int(19.5 * 60), 5*60, 45, 45)
+    for s in hue.get_all_schedules():
+        print(hue.b.schedules[int(s)]())
+    hue.delete_all_schedules()
