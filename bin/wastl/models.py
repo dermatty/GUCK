@@ -6,11 +6,35 @@ from wtforms import validators, FileField, FloatField, PasswordField
 from wtforms.validators import DataRequired
 
 
+class ScheduleForm(FlaskForm):
+    # All Week fixed
+    hlist = []
+    for hh in range(24):
+        hstr = str(hh)
+        if len(hstr) < 2:
+            hstr = "0" + hstr
+        helem = (hstr, hstr)
+        hlist.append(helem)
+    mlist = [("00", "00"), ("15", "15"), ("30", "30"), ("45", "45")]
+    schedulenr = HiddenField("Schedule Nr", default="0")
+    starttime_hh = SelectField('', choices=hlist)
+    starttime_mm = SelectField('', choices=mlist)
+    endtime_hh = SelectField('', choices=hlist)
+    endtime_mm = SelectField('', choices=mlist)
+    submit_aw = SubmitField(label="Save")
+
+    def populateform(self):
+        self.starttime_hh.data = "19"
+        self.starttime_mm.data = "30"
+        self.endtime_hh.data = "23"
+        self.endtime_mm.data = "30"
+
+
 class UserLoginForm(FlaskForm):
     email = TextField('Username/Email', [validators.Required(), validators.Length(min=4, max=25)])
     password = PasswordField('Password', [validators.Required(), validators.Length(min=6, max=200)])
     submit_u = SubmitField(label="Log In")
-
+    
 
 class BasicForm(FlaskForm):
     guck_home = TextField("GUCK_HOME")

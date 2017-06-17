@@ -860,18 +860,36 @@ def configmsg():
 @app.route("/hue/<selected_s>/", methods=['GET', 'POST'])
 @flask_login.login_required
 def hue(selected_s="0"):
-    # if called without parameter it's initial call, get schedule from DB
-    if selected_s == "0":
-        sel = "1"
-        try:
-            hue_sched = DB.db_query("hue", "schedule")
-        except:
+    if request.method == "GET":
+        scheduleform = models.ScheduleForm(request.form)
+        # if called without parameter it's initial call, get schedule from DB
+        if selected_s == "0":
             sel = "1"
-        if hue_sched == "-1":
-            sel = "1"
-        return render_template("hue.html", selected=sel)
-    else:
-        return render_template("hue.html", selected=str(selected_s))
+            try:
+                hue_sched = DB.db_query("hue", "schedule_type")
+            except:
+                sel = "1"
+            if hue_sched == "-1":
+                sel = "1"
+            scheduleform.populateform()
+            return render_template("hue.html", selected=sel, scheduleform=scheduleform)
+        else:
+            scheduleform.populateform()
+            return render_template("hue.html", selected=str(selected_s), scheduleform=scheduleform)
+    if request.method == "POST":
+        scheduleform = models.ScheduleForm(request.form)
+        sel = "0"
+        if (scheduleform.submit_aw.data):
+            if len([hc for hc in DB.db_getall("hue")]) == 0:
+                print("opening")
+                DB.db_open_one("hue", {"schedule_type": "2", "startt": "00:00", "endt": "00:00"})
+            if scheduleform.schedulenr.data == "2":
+                sel = "2"
+                DB.db_update("hue", "schedule_type", sel)
+                DB.db_update("hue", "startt", scheduleform.starttime_hh.data + ":" + scheduleform.starttime_mm.data)
+                DB.db_update("hue", "endt", scheduleform.endtime_hh.data + ":" + scheduleform.endtime_mm.data)
+        scheduleform.populateform()
+        return render_template("hue.html", selected=sel, scheduleform=scheduleform)
 
 
 if __name__ == "__main__":
