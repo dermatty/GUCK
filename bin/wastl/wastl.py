@@ -61,6 +61,16 @@ hashfile = "../../data/hash.pw"
 users = read_hashfile(hashfile)
 
 
+def get_hue_onoff(h):
+    g = h.get_all_groups()
+    gs = h.get_groups_status(g)
+    stat = True
+    for gs0 in gs:
+        if not gs0:
+            stat = False
+            break
+    return stat
+
 # Camera: http url jpg
 class Camera(object):
     def __init__(self, camnr, interval=0):
@@ -826,14 +836,7 @@ def _ajaxconfig():
         stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
         result0 = res0
     elif cmd == "hue_getonoff":
-        g = HUE.get_all_groups()
-        gs = HUE.get_groups_status(g)
-        stat = True
-        for gs0 in gs:
-            if not gs0:
-                stat = False
-                break
-        return jsonify(result=stat)
+        return jsonify(result=get_hue_onoff(HUE))
     elif cmd == "hue_on":
         g = HUE.get_all_groups()
         HUE.set_groups_on(g)
@@ -860,6 +863,7 @@ def configmsg():
 @app.route("/hue/<selected_s>/", methods=['GET', 'POST'])
 @flask_login.login_required
 def hue(selected_s="0"):
+    global HUE
     if request.method == "GET":
         scheduleform = models.ScheduleForm(request.form)
         # if called without parameter it's initial call, get schedule from DB
@@ -867,29 +871,53 @@ def hue(selected_s="0"):
             sel = "1"
             try:
                 hue_sched = DB.db_query("hue", "schedule_type")
+                sel = hue_sched
             except:
                 sel = "1"
             if hue_sched == "-1":
                 sel = "1"
-            scheduleform.populateform()
-            return render_template("hue.html", selected=sel, scheduleform=scheduleform)
+            if sel == "1":
+                HUE.delete_all_schedules()
+                DB.db_update("hue", "schedule_type", sel)
+            scheduleform.populateform(DB)
+            print(get_hue_onoff(HUE))
+            return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
         else:
-            scheduleform.populateform()
-            return render_template("hue.html", selected=str(selected_s), scheduleform=scheduleform)
+            if selected_s == "1":
+                HUE.delete_all_schedules()
+                DB.db_update("hue", "schedule_type", selected_s)
+            scheduleform.populateform(DB)
+            return render_template("hue.html", selected=str(selected_s), scheduleform=scheduleform, hue=get_hue_onoff(HUE))
     if request.method == "POST":
         scheduleform = models.ScheduleForm(request.form)
         sel = "0"
         if (scheduleform.submit_aw.data):
             if len([hc for hc in DB.db_getall("hue")]) == 0:
-                print("opening")
                 DB.db_open_one("hue", {"schedule_type": "2", "startt": "00:00", "endt": "00:00"})
-            if scheduleform.schedulenr.data == "2":
-                sel = "2"
+            # Fixed weekdays or allweek
+            if scheduleform.schedulenr.data == "2" or scheduleform.schedulenr.data == "3":
+                sel = scheduleform.schedulenr.data
+                startmins = int(scheduleform.starttime_hh.data)*60 + int(scheduleform.starttime_mm.data)
+                endmins = int(scheduleform.endtime_hh.data)*60 + int(scheduleform.endtime_mm.data)
                 DB.db_update("hue", "schedule_type", sel)
                 DB.db_update("hue", "startt", scheduleform.starttime_hh.data + ":" + scheduleform.starttime_mm.data)
                 DB.db_update("hue", "endt", scheduleform.endtime_hh.data + ":" + scheduleform.endtime_mm.data)
-        scheduleform.populateform()
-        return render_template("hue.html", selected=sel, scheduleform=scheduleform)
+                if scheduleform.schedulenr.data == "2":
+                    HUE.delete_all_schedules()
+                    gl = HUE.get_all_groups()
+                    HUE.set_groups_on(gl)
+                    for g0 in gl:
+                        # Mon - Fri fixed
+                        if scheduleform.schedulenr.data == "2":
+                            HUE.set_schedule_weekdays(g0, startmins, True)
+                            HUE.set_schedule_weekdays(g0, endmins, False)
+                        # Mon - Sun Fixed
+                        elif scheduleform.schedulenr.data == "3":
+                            HUE.set_schedule_allweek(g0, startmins, True)
+                            HUE.set_schedule_allweek(g0, endmins, False)
+
+        scheduleform.populateform(DB)
+        return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
 
 
 if __name__ == "__main__":

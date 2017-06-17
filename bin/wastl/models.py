@@ -23,11 +23,17 @@ class ScheduleForm(FlaskForm):
     endtime_mm = SelectField('', choices=mlist)
     submit_aw = SubmitField(label="Save")
 
-    def populateform(self):
-        self.starttime_hh.data = "19"
-        self.starttime_mm.data = "30"
-        self.endtime_hh.data = "23"
-        self.endtime_mm.data = "30"
+    def populateform(self, db):
+        startt = db.db_query("hue", "startt")
+        if startt == -1:
+            startt = "19:30"
+        endt = db.db_query("hue", "endt")
+        if endt == -1:
+            endt = "23:30"
+        self.starttime_hh.data = startt.split(":")[0]
+        self.starttime_mm.data = startt.split(":")[1]
+        self.endtime_hh.data = endt.split(":")[0]
+        self.endtime_mm.data = endt.split(":")[1]
 
 
 class UserLoginForm(FlaskForm):

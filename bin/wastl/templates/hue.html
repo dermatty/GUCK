@@ -10,11 +10,17 @@
         <div class="row">
             <div class="col-sm-2">
                 Hue Lights On/Off:
+                {{ hue }}
             </div>
             <div class="col-sm-3">
                 <div class="btn-group" id="toggle1hue">
+                    {% if hue == False %}
                     <button type="button" class="btn btn-info locked_active">OFF</button>
                     <button type="button" class="btn btn-default unlocked_inactive">ON</button>
+                    {% else %}
+                    <button type="button" class="btn btn-default locked_inactive">OFF</button>
+                    <button type="button" class="btn btn-info unlocked_active">ON</button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -40,6 +46,7 @@
         <br>
         <form style="border: none;" role="form" class="form-control" action="" method="post">
             {{ scheduleform.csrf_token }}
+            {#  Mon-Fri fixed #}
             {% if selected == '2' %}
             <br>
             <input id="schedulenr" name="schedulenr" type="hidden" value="2"/>
@@ -108,13 +115,13 @@
          $('#toggle1hue button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
          $('#toggle1hue button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
      });
-     $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "hue_getonoff"}, function(data) {
+     /*$.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "hue_getonoff"}, function(data) {
          var res = data.result;
          if (res) {
              $('#toggle1hue button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
              $('#toggle1hue button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
          };
-     });
+     });*/
  });
 
 </script>

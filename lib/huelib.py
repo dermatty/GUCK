@@ -101,7 +101,7 @@ class Hue:
 
     def set_schedule_request(self, g, lt, on):
         actionstr = self.apiurl + "groups/" + str(g) + "/action"
-        print(actionstr)
+        # print(actionstr)
         body = {
             "name": "sched" + lt + str(on),
             "description": "schedule" + lt + str(on),
@@ -173,8 +173,15 @@ class Hue:
     def set_schedule_allweek(self, g, mins, on):
         return self.set_schedule("allweek", g, mins, on)
 
+    def set_schedule_weekdays(self, g, mins, on):
+        return self.set_schedule("weekdays", g, mins, on)
+
     def set_schedule_timer(self, g, mins, on):
         return self.set_schedule("timer", g, mins, on)
+
+    def print_sched(self):
+        for s in hue.get_all_schedules():
+            print(hue.b.schedules[int(s)]())
 
 
 if __name__ == "__main__":
@@ -187,7 +194,7 @@ if __name__ == "__main__":
     hue = Hue()
 
     # set up everything new
-    hue.delete_all_groups()
+    ''' hue.delete_all_groups()
     hue.delete_all_schedules()
     l = hue.get_lights()
     print("Set new group:", hue.set_new_group(l))
@@ -204,3 +211,5 @@ if __name__ == "__main__":
     for s in hue.get_all_schedules():
         print(hue.b.schedules[int(s)]())
     hue.delete_all_schedules()
+    '''
+    hue.print_sched()
