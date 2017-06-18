@@ -120,7 +120,7 @@ def gen(camera):
 
 # start WastlAlarmClient Thread
 class PushThread(Thread):
-    def __init__(self, app, DB0, timeout=7200):
+    def __init__(self, app, DB0, HUE0, timeout=7200):
         Thread.__init__(self)
         self.daemon = True
         self.was = zenzlib.WastlAlarmClient()
@@ -129,6 +129,7 @@ class PushThread(Thread):
         self.DB = DB0
         self.timeout = timeout
         self.guckstatus = False
+        self.HUE = HUE0
 
     def run(self):
         while True:
@@ -146,6 +147,17 @@ class PushThread(Thread):
                     cursor = self.DB.db.userdata.find()
                     sent = True
                     self.guckstatus = True
+                    # hue falls on_guck alert aktiviert
+                    if self.DB.db_query("hue", "schedule_type") == "5":
+                        HUE.delete_all_schedules()
+                        gl = HUE.get_all_groups()
+                        HUE.set_groups_on(gl)
+                        try:
+                            gdur = self.DB.db_query("hue", "guckdur")
+                        except:
+                            gdur = 15
+                        for g0 in gl:
+                            HUE.set_schedule_timer(g0, gdur, False)
                     for userd in cursor:
                         user0 = userd["user"]
                         active = userd["active"]
@@ -216,7 +228,7 @@ class PushThread(Thread):
             time.sleep(1)
 
 
-PUSHT = PushThread(app, DB)
+PUSHT = PushThread(app, DB, HUE)
 PUSHT.start()
 cursor = DB.db.userdata.find()
 for userd in cursor:
@@ -871,6 +883,9 @@ def hue(selected_s="0"):
             sel = "1"
             try:
                 hue_sched = DB.db_query("hue", "schedule_type")
+                if len([hc for hc in DB.db_getall("hue")]) == 0:
+                    DB.db_open_one("hue", {"schedule_type": "1", "startt": "19:00", "endt": "23:30", "duration": 4, "rshift": 45,
+                                           "guckdur": 15})
                 sel = hue_sched
             except:
                 sel = "1"
@@ -880,7 +895,6 @@ def hue(selected_s="0"):
                 HUE.delete_all_schedules()
                 DB.db_update("hue", "schedule_type", sel)
             scheduleform.populateform(DB)
-            print(get_hue_onoff(HUE))
             return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
         else:
             if selected_s == "1":
@@ -893,7 +907,36 @@ def hue(selected_s="0"):
         sel = "0"
         if (scheduleform.submit_aw.data):
             if len([hc for hc in DB.db_getall("hue")]) == 0:
-                DB.db_open_one("hue", {"schedule_type": "2", "startt": "00:00", "endt": "00:00"})
+                DB.db_open_one("hue", {"schedule_type": "2", "startt": "19:00", "endt": "23:30", "duration": 4, "rshift": 45,
+                                       "guckdur": 15})
+            if not scheduleform.validate_on_submit():
+                flash_errors(scheduleform)
+                return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
+            # on GUCK alert
+            if scheduleform.schedulenr.data == "5" and scheduleform.validate_on_submit():
+                sel = scheduleform.schedulenr.data
+                guckdur = int(scheduleform.guck_duration.data)
+                DB.db_update("hue", "schedule_type", sel)
+                DB.db_update("hue", "guckdur", guckdur)
+                HUE.delete_all_schedules()
+
+            # Random all week
+            if scheduleform.schedulenr.data == "4" and scheduleform.validate_on_submit():
+                sel = scheduleform.schedulenr.data
+                startmins = int(scheduleform.starttime_hh.data)*60 + int(scheduleform.starttime_mm.data)
+                dur = int(scheduleform.duration_hh.data)*60
+                rsh = int(scheduleform.random_shift.data)
+                DB.db_update("hue", "schedule_type", sel)
+                DB.db_update("hue", "startt", scheduleform.starttime_hh.data + ":" + scheduleform.starttime_mm.data)
+                DB.db_update("hue", "endt", scheduleform.endtime_hh.data + ":" + scheduleform.endtime_mm.data)
+                DB.db_update("hue", "duration", int(scheduleform.duration_hh.data))
+                DB.db_update("hue", "rshift", int(scheduleform.random_shift.data))
+                HUE.delete_all_schedules()
+                gl = HUE.get_all_groups()
+                HUE.set_groups_on(gl)
+                for g0 in gl:
+                    HUE.set_weekly_random_schedules(g0, startmins, dur, rsh, rsh)
+
             # Fixed weekdays or allweek
             if scheduleform.schedulenr.data == "2" or scheduleform.schedulenr.data == "3":
                 sel = scheduleform.schedulenr.data

@@ -2,6 +2,18 @@
 {% set active_nav = "hue" %}
 
 {% block repstr %}
+
+{# ALERTS #}
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class=flashes>
+    {% for m in messages %}
+    <li class="text-danger">{{ m }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endwith %}
+
 <div class="panel panel-default">
     <div class="panel-heading" style="font-size:18px;">Guck Runtime Settings</div>
     <div class="panel-body">
@@ -10,7 +22,6 @@
         <div class="row">
             <div class="col-sm-2">
                 Hue Lights On/Off:
-                {{ hue }}
             </div>
             <div class="col-sm-3">
                 <div class="btn-group" id="toggle1hue">
@@ -46,13 +57,27 @@
         <br>
         <form style="border: none;" role="form" class="form-control" action="" method="post">
             {{ scheduleform.csrf_token }}
-            {#  Mon-Fri fixed #}
-            {% if selected == '2' %}
+            <input id="schedulenr" name="schedulenr" type="hidden" value="{{ selected }}"/>
+            {# on guck schedule #}
+            {% if selected == '5' %}
             <br>
-            <input id="schedulenr" name="schedulenr" type="hidden" value="2"/>
             <div class="row">
                 <div class="col-sm-2">
-                    Start time
+                    {{ scheduleform.on_guck_duration.label }}
+                </div>
+                <div class="col-sm-2">
+                    {{ scheduleform.on_guck_duration }}
+                </div>
+            </div>
+            <br>
+            {{ scheduleform.submit_aw(class="btn btn-primary")}}
+            {% endif %}
+            {# all week random schedule #}
+            {% if selected == '4' %}
+            <br>
+            <div class="row">
+                <div class="col-sm-2">
+                    <b>Start time</b>
                 </div>
                 <div class="col-sm-2">
                     {{ scheduleform.starttime_hh.label }}
@@ -64,7 +89,42 @@
             <br>
             <div class="row">
                 <div class="col-sm-2">
-                    End time
+                    {{ scheduleform.duration_hh.label }}
+                </div>
+                <div class="col-sm-2">
+                    {{ scheduleform.duration_hh }}
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-sm-2">
+                    {{ scheduleform.random_shift.label }}
+                </div>
+                <div class="col-sm-2">
+                    {{ scheduleform.random_shift }}
+                </div>
+            </div>
+            <br>
+            {{ scheduleform.submit_aw(class="btn btn-primary")}}
+            {% endif %}
+            {#  Mon-Fri fixed bzw. allweek fixed #}
+            {% if selected == '2' or selected == '3' %}
+            <br>
+            <div class="row">
+                <div class="col-sm-2">
+                    <b>Start time</b>
+                </div>
+                <div class="col-sm-2">
+                    {{ scheduleform.starttime_hh.label }}
+                    {{ scheduleform.starttime_hh }}
+                    {{ scheduleform.starttime_mm.label }}
+                    {{ scheduleform.starttime_mm }}
+                </div>
+            </div>
+            <br>
+            <div class="row">
+                <div class="col-sm-2">
+                    <b>End time</b>
                 </div>
                 <div class="col-sm-2">
                     {{ scheduleform.endtime_hh.label }}
@@ -77,8 +137,11 @@
             {{ scheduleform.submit_aw(class="btn btn-primary")}}
             {% endif %}            
         </form>
-        {% if selected == '2' %}
+        {% if selected == '2' or selected == '3' or selected == '5' %}
         <br><br><br><br><br><br>
+        {% endif %}
+        {% if selected == '4' %}
+        <br><br><br><br><br><br><br><br><br>
         {% endif %}
     </div>  {# panel body #}
 </div> {# panel heading #}

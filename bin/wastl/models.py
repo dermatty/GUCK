@@ -17,10 +17,22 @@ class ScheduleForm(FlaskForm):
         hlist.append(helem)
     mlist = [("00", "00"), ("15", "15"), ("30", "30"), ("45", "45")]
     schedulenr = HiddenField("Schedule Nr", default="0")
-    starttime_hh = SelectField('', choices=hlist)
-    starttime_mm = SelectField('', choices=mlist)
-    endtime_hh = SelectField('', choices=hlist)
-    endtime_mm = SelectField('', choices=mlist)
+    starttime_hh = SelectField('', [validators.DataRequired()], choices=hlist, default="19")
+    starttime_mm = SelectField('', [validators.DataRequired()], choices=mlist, default="30")
+    endtime_hh = SelectField('', [validators.DataRequired()], choices=hlist, default="23")
+    endtime_mm = SelectField('', [validators.DataRequired()], choices=mlist, default="30")
+    duration_hh = IntegerField("Duration (hh)",
+                               [validators.NumberRange(min=1, max=23,
+                                                       message="Duration must be integer between 1 and 23!")],
+                               default=4)
+    random_shift = IntegerField("Random shift (mm)",
+                                [validators.NumberRange(min=1, max=120,
+                                                        message="Random shiftmust be integer between 1 and 120!")],
+                                default=45)
+    on_guck_duration = IntegerField("Duration in alert(mm)",
+                                    [validators.NumberRange(min=1, max=120,
+                                                            message="Duration must be integer between 1 and 120!")],
+                                    default=15)
     submit_aw = SubmitField(label="Save")
 
     def populateform(self, db):
@@ -30,6 +42,18 @@ class ScheduleForm(FlaskForm):
         endt = db.db_query("hue", "endt")
         if endt == -1:
             endt = "23:30"
+        dur = db.db_query("hue", "duration")
+        if dur == -1:
+            dur = 4
+        rsh = db.db_query("hue", "rshift")
+        if rsh == -1:
+            rsh = 45
+        gdur = db.db_query("hue", "guckdur")
+        if gdur == -1:
+            gdur = 15
+        self.on_guck_duration = gdur
+        self.duration_hh.data = dur
+        self.random_shift.data = rsh
         self.starttime_hh.data = startt.split(":")[0]
         self.starttime_mm.data = startt.split(":")[1]
         self.endtime_hh.data = endt.split(":")[0]
@@ -45,8 +69,9 @@ class UserLoginForm(FlaskForm):
 class BasicForm(FlaskForm):
     guck_home = TextField("GUCK_HOME")
     doheartbeat = BooleanField("Heartbeat")
-    heartbeat_delta = IntegerField("Heartbeat delta (min)", [validators.NumberRange(min=1, max=1440,
-                                                                                    message="Delta must be between 1 min and 24h !")])
+    heartbeat_delta = IntegerField("Heartbeat delta (min)",
+                                   [validators.NumberRange(min=1, max=1440,
+                                    message="Delta must be between 1 min and 24h !")])
     heartbeat_dest = SelectField(u'Heartbeat Destination', choices=[('mail', 'E-Mail'), ('telegram', 'Telegram')])
     warn_on_status = BooleanField("Warn on status")
     show_frames = BooleanField("Show Frames")
