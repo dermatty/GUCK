@@ -15,7 +15,7 @@
 {% endwith %}
 
 <div class="panel panel-default">
-    <div class="panel-heading" style="font-size:18px;">Guck Runtime Settings</div>
+    <div class="panel-heading" style="font-size:18px;">Hue Settings</div>
     <div class="panel-body">
         <br>
         {# Hue on/off #}
@@ -60,6 +60,15 @@
             <input id="schedulenr" name="schedulenr" type="hidden" value="{{ selected }}"/>
             {# on guck schedule #}
             {% if selected == '5' %}
+            <br>
+            <div class="row">
+                <div class="col-sm-2">
+                    {{ scheduleform.only_night.label }}
+                </div>
+                <div class="col-sm-2">
+                    {{ scheduleform.only_night }}
+                </div>
+            </div>
             <br>
             <div class="row">
                 <div class="col-sm-2">

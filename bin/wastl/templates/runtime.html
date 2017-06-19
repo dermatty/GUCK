@@ -9,12 +9,17 @@
         {# Telegram Mode #}
         <div class="row">
             <div class="col-sm-2">
-                Telegram mode:
+                Telegram verbosity:
             </div>
             <div class="col-sm-3">
                 <div class="btn-group" id="toggle1">
+                    {% if rtm == False %}
                     <button type="button" class="btn btn-info locked_active">OFF</button>
                     <button type="button" class="btn btn-default unlocked_inactive">ON</button>
+                    {% else %}
+                    <button type="button" class="btn btn-default locked_inactive">OFF</button>
+                    <button type="button" class="btn btn-info unlocked_active">ON</button>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-sm-2" id="tgmodetext">
@@ -47,13 +52,13 @@
 	     $('#toggle1 button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
      });
 
-     $.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "runtime_gettgmode"}, function(data) {
+     /*$.getJSON($SCRIPT_ROOT + "/_ajaxconfig", {cmd: "runtime_gettgmode"}, function(data) {
          var res = data.result;
          if (res.indexOf("verbose") != -1) {
              $('#toggle1 button').eq(0).toggleClass('locked_inactive locked_active btn-default btn-info');
 	         $('#toggle1 button').eq(1).toggleClass('unlocked_inactive unlocked_active btn-info btn-default');
          };
-	 });     
+	 });*/     
  });
 
 </script>

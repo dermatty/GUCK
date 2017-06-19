@@ -50,27 +50,26 @@
               </form>
           </tbody>
       </table>
-      <div class="dropdown">
-          <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+      <div class="row" >
+          <div class="col-xs-3">
+              <div class="dropdown">
+              <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
               {% if speed > 0 %}
               Interval: {{ speed }}
               {% else %}
               Streaming
               {% endif %}
               <span class="caret"></span>
-          </button>
-          <ul class="dropdown-menu">
+              </button>
+              <ul class="dropdown-menu">
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=0, toggle=0) }}">0 (stream)</a></li>
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=1, toggle=0) }}">1 sec</a></li>
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=2, toggle=0) }}">2 sec</a></li>
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=5, toggle=0) }}">5 sec</a></li>
               <li><a href="{{ url_for('livecam', camnrstr=camnr-1, interval=15, toggle=0) }}">15 sec</a></li>
-          </ul>
-      </div>
-      <br>
-      <div class="row" >
-          <div class="col-xs-3">
-          </div>
+              </ul>
+              </div> {# dropdown #} 
+          </div> {# col #}
           <div class="col-xs-2">
               <a href="#" class="btn btn-success btn-lg" onclick="location.href='{{ url_for('livecam', camnrstr=camnr-1, interval=speed, toggle=0, ptz=1) }}'">
                   <span class="glyphicon glyphicon-arrow-up"></span>

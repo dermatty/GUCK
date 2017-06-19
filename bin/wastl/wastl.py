@@ -25,6 +25,8 @@ import numpy as np
 import urllib.request
 from requests.auth import HTTPBasicAuth
 import dill
+import datetime
+import ephem
 
 socketstate = None
 CHATEDIT_INDEX = -1
@@ -70,6 +72,7 @@ def get_hue_onoff(h):
             stat = False
             break
     return stat
+
 
 # Camera: http url jpg
 class Camera(object):
@@ -132,6 +135,10 @@ class PushThread(Thread):
         self.HUE = HUE0
 
     def run(self):
+        o = ephem.Observer()
+        o.lat = "48.18"
+        o.long = "16.08"
+        sun = ephem.Sun()
         while True:
             sent = False
             stat, data, paused = self.was.get_from_guck()
@@ -149,15 +156,29 @@ class PushThread(Thread):
                     self.guckstatus = True
                     # hue falls on_guck alert aktiviert
                     if self.DB.db_query("hue", "schedule_type") == "5":
-                        HUE.delete_all_schedules()
-                        gl = HUE.get_all_groups()
-                        HUE.set_groups_on(gl)
-                        try:
-                            gdur = self.DB.db_query("hue", "guckdur")
-                        except:
-                            gdur = 15
-                        for g0 in gl:
-                            HUE.set_schedule_timer(g0, gdur, False)
+                        guckalarm = True
+                        if self.DB.db_query("hue", "onlynight"):
+                            sun.compute()
+                            sunset0 = ephem.localtime(o.next_setting(sun))
+                            sunset = sunset0.hour + sunset0.minute/60
+                            sunrise0 = ephem.localtime(o.next_rising(sun))
+                            sunrise = sunrise0.hour + sunset0.minute/60
+                            n0 = datetime.datetime.now()
+                            timedec = n0.hour + n0.minute/60
+                            if timedec > sunrise and timedec < sunset:
+                                guckalarm = False
+                            else:
+                                guckalarm = True
+                        if guckalarm:
+                            HUE.delete_all_schedules()
+                            gl = HUE.get_all_groups()
+                            HUE.set_groups_on(gl)
+                            try:
+                                gdur = self.DB.db_query("hue", "guckdur")
+                            except:
+                                gdur = 15
+                            for g0 in gl:
+                                HUE.set_schedule_timer(g0, gdur, False)
                     for userd in cursor:
                         user0 = userd["user"]
                         active = userd["active"]
@@ -178,10 +199,9 @@ class PushThread(Thread):
                                 type0 = "title_" + user0
                                 sse.publish({"message": str(newd)}, type=type0)
                             # if more than x photos, delete oldest in photodata and userdata[photolist]
-                            if DB.db_count("photodata") > 5:
+                            if DB.db_count("photodata") > 15:
                                 # delete oldest entry in photodata
                                 mintm = DB.db_find_min("photodata", "tm")
-                                print(mintm)
                                 DB.db_delete_one("photodata", "tm", mintm)
                                 # delete also from all active users photolist
                                 for userd2 in cursor:
@@ -415,7 +435,7 @@ def detections():
         user0 = userd["user"]
         if user0 == g.user:
             photol = userd["photolist"]
-            thresh = 20
+            thresh = 15
             for i, tm in enumerate(reversed(photol)):
                 if i > thresh:
                     break
@@ -440,7 +460,7 @@ def guck(menu1, param1):
     global socketstate
     global DB
 
-    if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status" or menu1 == "start" or menu1 == "stop":
+    if menu1 == "photo" or menu1 == "system" or menu1 == "help" or menu1 == "status" or menu1 == "start" or menu1 == "stop" or menu1 == "runtime-settings":
         GUCK_PATH = DB.db_query("remote", "guck_path")
         REMOTE_HOST = DB.db_query("remote", "remote_host")
         REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
@@ -496,7 +516,9 @@ def guck(menu1, param1):
         camlist.append((str(i), "ALL CAMERAS", camsok))
         return render_template("photo.html", camlist=camlist, pn=pn, param1=param1, menu1=menu1)
     elif menu1 == "runtime-settings":
-        return render_template("runtime.html", param1=param1)
+        stat, res0 = ZENZL.request_to_guck("gettgmode", REMOTE_HOST, REMOTE_PORT)
+        rtm = "verbose" in res0
+        return render_template("runtime.html", param1=param1, rtm=rtm)
     elif menu1 == "start":
         rep0 = []
         stat, rep = ZENZL.ping()
@@ -885,7 +907,7 @@ def hue(selected_s="0"):
                 hue_sched = DB.db_query("hue", "schedule_type")
                 if len([hc for hc in DB.db_getall("hue")]) == 0:
                     DB.db_open_one("hue", {"schedule_type": "1", "startt": "19:00", "endt": "23:30", "duration": 4, "rshift": 45,
-                                           "guckdur": 15})
+                                           "guckdur": 15, "onlynight": False})
                 sel = hue_sched
             except:
                 sel = "1"
@@ -908,17 +930,21 @@ def hue(selected_s="0"):
         if (scheduleform.submit_aw.data):
             if len([hc for hc in DB.db_getall("hue")]) == 0:
                 DB.db_open_one("hue", {"schedule_type": "2", "startt": "19:00", "endt": "23:30", "duration": 4, "rshift": 45,
-                                       "guckdur": 15})
+                                       "guckdur": 15, "onlynight": False})
             if not scheduleform.validate_on_submit():
                 flash_errors(scheduleform)
                 return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
             # on GUCK alert
             if scheduleform.schedulenr.data == "5" and scheduleform.validate_on_submit():
                 sel = scheduleform.schedulenr.data
-                guckdur = int(scheduleform.guck_duration.data)
+                guckdur = int(scheduleform.on_guck_duration.data)
+                onlynight = scheduleform.only_night.data
                 DB.db_update("hue", "schedule_type", sel)
                 DB.db_update("hue", "guckdur", guckdur)
+                DB.db_update("hue", "onlynight", onlynight)
                 HUE.delete_all_schedules()
+                gl = HUE.get_all_groups()
+                HUE.set_groups_off(gl)
 
             # Random all week
             if scheduleform.schedulenr.data == "4" and scheduleform.validate_on_submit():
@@ -933,7 +959,7 @@ def hue(selected_s="0"):
                 DB.db_update("hue", "rshift", int(scheduleform.random_shift.data))
                 HUE.delete_all_schedules()
                 gl = HUE.get_all_groups()
-                HUE.set_groups_on(gl)
+                HUE.set_groups_off(gl)
                 for g0 in gl:
                     HUE.set_weekly_random_schedules(g0, startmins, dur, rsh, rsh)
 
@@ -945,19 +971,18 @@ def hue(selected_s="0"):
                 DB.db_update("hue", "schedule_type", sel)
                 DB.db_update("hue", "startt", scheduleform.starttime_hh.data + ":" + scheduleform.starttime_mm.data)
                 DB.db_update("hue", "endt", scheduleform.endtime_hh.data + ":" + scheduleform.endtime_mm.data)
-                if scheduleform.schedulenr.data == "2":
-                    HUE.delete_all_schedules()
-                    gl = HUE.get_all_groups()
-                    HUE.set_groups_on(gl)
-                    for g0 in gl:
-                        # Mon - Fri fixed
-                        if scheduleform.schedulenr.data == "2":
-                            HUE.set_schedule_weekdays(g0, startmins, True)
-                            HUE.set_schedule_weekdays(g0, endmins, False)
-                        # Mon - Sun Fixed
-                        elif scheduleform.schedulenr.data == "3":
-                            HUE.set_schedule_allweek(g0, startmins, True)
-                            HUE.set_schedule_allweek(g0, endmins, False)
+                HUE.delete_all_schedules()
+                gl = HUE.get_all_groups()
+                HUE.set_groups_off(gl)
+                for g0 in gl:
+                    # Mon - Fri fixed
+                    if scheduleform.schedulenr.data == "2":
+                        HUE.set_schedule_weekdays(g0, startmins, True)
+                        HUE.set_schedule_weekdays(g0, endmins, False)
+                    # Mon - Sun Fixed
+                    elif scheduleform.schedulenr.data == "3":
+                        HUE.set_schedule_allweek(g0, startmins, True)
+                        HUE.set_schedule_allweek(g0, endmins, False)
 
         scheduleform.populateform(DB)
         return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))

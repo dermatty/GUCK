@@ -16,6 +16,7 @@ class ScheduleForm(FlaskForm):
         helem = (hstr, hstr)
         hlist.append(helem)
     mlist = [("00", "00"), ("15", "15"), ("30", "30"), ("45", "45")]
+    only_night = BooleanField("Only nightmode")
     schedulenr = HiddenField("Schedule Nr", default="0")
     starttime_hh = SelectField('', [validators.DataRequired()], choices=hlist, default="19")
     starttime_mm = SelectField('', [validators.DataRequired()], choices=mlist, default="30")
@@ -29,13 +30,16 @@ class ScheduleForm(FlaskForm):
                                 [validators.NumberRange(min=1, max=120,
                                                         message="Random shiftmust be integer between 1 and 120!")],
                                 default=45)
-    on_guck_duration = IntegerField("Duration in alert(mm)",
+    on_guck_duration = IntegerField("Duration on alert(mm)",
                                     [validators.NumberRange(min=1, max=120,
                                                             message="Duration must be integer between 1 and 120!")],
                                     default=15)
     submit_aw = SubmitField(label="Save")
 
     def populateform(self, db):
+        onlynight = db.db_query("hue", "onlynight")
+        if onlynight == -1:
+            onlynight = False
         startt = db.db_query("hue", "startt")
         if startt == -1:
             startt = "19:30"
@@ -51,7 +55,8 @@ class ScheduleForm(FlaskForm):
         gdur = db.db_query("hue", "guckdur")
         if gdur == -1:
             gdur = 15
-        self.on_guck_duration = gdur
+        self.only_night.data = onlynight
+        self.on_guck_duration.data = gdur
         self.duration_hh.data = dur
         self.random_shift.data = rsh
         self.starttime_hh.data = startt.split(":")[0]
