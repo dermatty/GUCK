@@ -648,7 +648,6 @@ def guck(menu1, param1):
             # basic
             if (basicform.save.data):
                 if basicform.validate_on_submit() or not basicform.doheartbeat.data:
-                    print("basic validated!")
                     save_and_prepare_forms(DB, basicform, formlist)
                 else:
                     save_and_prepare_forms(DB, None, formlist)

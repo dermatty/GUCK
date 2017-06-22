@@ -248,6 +248,13 @@ class GControl:
         self.OEPHEM.lat = self.DB.db_query("ephem", "lat")
         self.OEPHEM.long = self.DB.db_query("ephem", "long")
         self.SUN = ephem.Sun()
+        # just for logging
+        logger.info("Latitude: " + self.DB.db_query("ephem", "lat"))
+        logger.info("Long: " + self.DB.db_query("ephem", "long"))
+        sunset0 = ephem.localtime(self.OEPHEM.next_setting(self.SUN))
+        logger.info("Sunset: " + str(sunset0.hour + sunset0.minute/60))
+        sunrise0 = ephem.localtime(self.OEPHEM.next_rising(self.SUN))
+        logger.info("Sunrise: " + str(sunrise0.hour + sunrise0.minute/60))
 
         # telegram
         self.DO_TELEGRAM = self.DB.db_query("telegram", "do_telegram")

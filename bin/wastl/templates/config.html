@@ -418,6 +418,42 @@
                          {{ basicform.heartbeat_dest }}
                      </div>
                  </div>
+                 <br><hr>
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {{ basicform.location.label }}                         
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.location(style="width:360px;") }}
+                     </div>
+                 </div>
+                 <br>
+                 <div class="row">
+                     <div class="col-sm-2">
+                         {{ basicform.apikey.label }}                         
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.apikey(style="width:360px;") }}
+                     </div>
+                 </div>
+                 <br>
+                 <div class="row">
+                     <div class="col-sm-2" style="font-weight: bold;">
+                         Longitude                         
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.long }}
+                     </div>
+                 </div>
+                 <div class="row">
+                     <div class="col-sm-2" style="font-weight: bold;">
+                         Latitude                         
+                     </div>
+                     <div class="col-sm-2">
+                         {{ basicform.lat }}
+                     </div>
+                 </div>
+                 <br>
                  <hr><br>
                  {{ basicform.save(class="btn btn-primary") }}
              </form>

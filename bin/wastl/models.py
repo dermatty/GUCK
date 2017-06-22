@@ -4,7 +4,7 @@ from flask_wtf import FlaskForm
 from wtforms import IntegerField, SelectField, BooleanField, SubmitField, TextField, HiddenField
 from wtforms import validators, FileField, FloatField, PasswordField
 from wtforms.validators import DataRequired
-
+import googlemaps
 
 class ScheduleForm(FlaskForm):
     # All Week fixed
@@ -81,6 +81,10 @@ class BasicForm(FlaskForm):
     warn_on_status = BooleanField("Warn on status")
     show_frames = BooleanField("Show Frames")
     dologfps = BooleanField("Log FPS")
+    location = TextField("Location",  validators=[DataRequired()])
+    apikey = TextField("Google API-Key",  validators=[DataRequired()])
+    long = ""
+    lat = ""
     save = SubmitField(label="Save")
 
     def populateform(self, db):
@@ -91,6 +95,10 @@ class BasicForm(FlaskForm):
         self.warn_on_status.data = db.db_query("basic", "warn_on_status")
         self.show_frames.data = db.db_query("basic", "show_frames")
         self.dologfps.data = db.db_query("basic", "do_logfps")
+        self.location.data = db.db_query("ephem", "location")
+        self.apikey.data = db.db_query("ephem", "api-key")
+        self.long = db.db_query("ephem", "long")
+        self.lat = db.db_query("ephem", "lat")
 
     def updatedb(self, db):
         db.db_update("basic", "guck_home", self.guck_home.data)
@@ -100,6 +108,17 @@ class BasicForm(FlaskForm):
         db.db_update("basic", "warn_on_status", self.warn_on_status.data)
         db.db_update("basic", "show_frames", self.show_frames.data)
         db.db_update("basic", "do_logfps", self.dologfps.data)
+        db.db_update("ephem", "api-key", self.apikey.data)
+        try:
+            gmaps = googlemaps.Client(key=self.apikey.data)
+            res = gmaps.geocode(self.location.data)
+            db.db_update("ephem", "location", res[0]["formatted_address"])
+            db.db_update("ephem", "long", str(res[0]["geometry"]["location"]["lng"]))
+            db.db_update("ephem", "lat", str(res[0]["geometry"]["location"]["lat"]))
+        except:
+            db.db_update("ephem", "location", "## N/A ##")
+            db.db_update("ephem", "long", "0.0")
+            db.db_update("ephem", "lat", "0.0")
 
 
 class TelegramForm(FlaskForm):
