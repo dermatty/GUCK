@@ -136,8 +136,8 @@ class PushThread(Thread):
 
     def run(self):
         o = ephem.Observer()
-        o.lat = "48.18"
-        o.long = "16.08"
+        o.lat = self.DB.db_query("ephem", "lat")
+        o.long = self.DB.db_query("ephem", "long")
         sun = ephem.Sun()
         while True:
             sent = False
@@ -162,7 +162,7 @@ class PushThread(Thread):
                             sunset0 = ephem.localtime(o.next_setting(sun))
                             sunset = sunset0.hour + sunset0.minute/60
                             sunrise0 = ephem.localtime(o.next_rising(sun))
-                            sunrise = sunrise0.hour + sunset0.minute/60
+                            sunrise = sunrise0.hour + sunrise0.minute/60
                             n0 = datetime.datetime.now()
                             timedec = n0.hour + n0.minute/60
                             if timedec > sunrise and timedec < sunset:

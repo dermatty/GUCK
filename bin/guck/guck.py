@@ -3,7 +3,7 @@
 import sys
 sys.path.append("../../lib")
 
-
+import ephem
 import theano
 import guckmongo
 from bson.objectid import ObjectId
@@ -244,10 +244,10 @@ class GControl:
         # nightmode
         # Pressbaum Koordinaten
         self.NIGHTMODE = False
-        self.COORDS = {'longitude': 16.08, 'latitude': 48.18}
-        self.SUN = Sun()
-        self.SUNSET = self.SUN.getSunsetTime(self.COORDS)['decimal']
-        self.SUNRISE = self.SUN.getSunriseTime(self.COORDS)['decimal']
+        self.OEPHEM = ephem.Observer()
+        self.OEPHEM.lat = self.DB.db_query("ephem", "lat")
+        self.OEPHEM.long = self.DB.db_query("ephem", "long")
+        self.SUN = ephem.Sun()
 
         # telegram
         self.DO_TELEGRAM = self.DB.db_query("telegram", "do_telegram")
@@ -460,14 +460,17 @@ class GControl:
                 logger.info("Login to FTP successfull")
 
     def setNightMode(self):
+        sunset0 = ephem.localtime(self.OEPHEM.next_setting(self.SUN))
+        sunset = sunset0.hour + sunset0.minute/60
+        sunrise0 = ephem.localtime(self.OEPHEM.next_rising(self.SUN))
+        sunrise = sunrise0.hour + sunrise0.minute/60
         n0 = datetime.datetime.now()
-        tshift = 0.7
         timedec = n0.hour + n0.minute/60
-        if timedec > self.SUNSET + tshift and not self.NIGHTMODE:
+        if timedec > sunset and not self.NIGHTMODE:
             self.NIGHTMODE = True
             self.HCLIMIT = 1
             logger.info("Night comes, switching to Night Mode ...")
-        if timedec > self.SUNRISE + tshift and timedec < self.SUNSET + tshift and self.NIGHTMODE:
+        if timedec > sunrise and timedec < sunset and self.NIGHTMODE:
             self.NIGHTMODE = False
             if self.CNNMODEL == "cnn":
                 self.HCLIMIT = 2
