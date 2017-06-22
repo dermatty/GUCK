@@ -77,7 +77,7 @@
                     {% for id, href, caption, pp1, pp2, pp3, pp4, pp5, pp6, pp7 in navbar0_dd%}
                     {% if pp1 != "." %}
                     <li id="{{ id|e }}" {% if active_nav == id %} class="dropdown active" {% else %} class="dropdown" {% endif %}><a class="dropdown-toggle" data-toggle="dropdown" href=" href="{{ href|e }}"">{{ caption|e }}<span class="caret"></span></a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu" style="font-size: 18px;">
                             <li><a href="{{ url_for(id, menu1=pp1) }}">{{ pp1|e }}</a></li>
                             {% if pp2 != "." %} <li><a href="{{ url_for(id, menu1=pp2) }}">{{ pp2|e }}</a></li> {% endif %}
                             {% if pp3 != "." %} <li><a href="{{ url_for(id, menu1=pp3) }}">{{ pp3|e }}</a></li> {% endif %}
