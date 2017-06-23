@@ -6,15 +6,10 @@ from wtforms import validators, FileField, FloatField, PasswordField
 from wtforms.validators import DataRequired
 import googlemaps
 
+
 class ScheduleForm(FlaskForm):
     # All Week fixed
-    hlist = []
-    for hh in range(24):
-        hstr = str(hh)
-        if len(hstr) < 2:
-            hstr = "0" + hstr
-        helem = (hstr, hstr)
-        hlist.append(helem)
+    hlist = [("0"+str(hh), "0"+str(hh)) if len(str(hh)) < 2 else (str(hh), str(hh)) for hh in range(24)]
     mlist = [("00", "00"), ("15", "15"), ("30", "30"), ("45", "45")]
     only_night = BooleanField("Only nightmode")
     schedulenr = HiddenField("Schedule Nr", default="0")
