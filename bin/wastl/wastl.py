@@ -891,6 +891,21 @@ def configmsg():
     return jsonify(feedback=f)
 
 
+def get_geo_timestr():
+    o = ephem.Observer()
+    o.lat = DB.db_query("ephem", "lat")
+    o.long = DB.db_query("ephem", "long")
+    sun = ephem.Sun()
+    sun.compute()
+    sunset0 = ephem.localtime(o.next_setting(sun))
+    sunrise0 = ephem.localtime(o.next_rising(sun))
+    hh0 = str(sunset0.hour) if len(str(sunset0.hour)) > 1 else "0" + str(sunset0.hour)
+    min0 = str(sunset0.minute) if len(str(sunset0.minute)) > 1 else "0" + str(sunset0.minute)
+    hh1 = str(sunrise0.hour) if len(str(sunrise0.hour)) > 1 else "0" + str(sunrise0.hour)
+    min1 = str(sunrise0.minute) if len(str(sunrise0.minute)) > 1 else "0" + str(sunrise0.minute)
+    return "(" + hh0 + ":" + min0 + "h - " + hh1 + ":" + min1 + "h)"
+
+
 # @app.route("/hue/<sel>/", defaults={"param1": "0"}, methods=['GET', 'POST'])
 @app.route("/hue/", defaults={"selected_s": "0"}, methods=['GET', 'POST'])
 @app.route("/hue/<selected_s>/", methods=['GET', 'POST'])
@@ -916,13 +931,16 @@ def hue(selected_s="0"):
                 HUE.delete_all_schedules()
                 DB.db_update("hue", "schedule_type", sel)
             scheduleform.populateform(DB)
-            return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
+            timestr = get_geo_timestr()
+            return render_template("hue.html", timestr=timestr, selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
         else:
             if selected_s == "1":
                 HUE.delete_all_schedules()
                 DB.db_update("hue", "schedule_type", selected_s)
             scheduleform.populateform(DB)
-            return render_template("hue.html", selected=str(selected_s), scheduleform=scheduleform, hue=get_hue_onoff(HUE))
+            timestr = get_geo_timestr()
+            return render_template("hue.html", timestr=timestr, selected=str(selected_s), scheduleform=scheduleform,
+                                   hue=get_hue_onoff(HUE))
     if request.method == "POST":
         scheduleform = models.ScheduleForm(request.form)
         sel = "0"
@@ -984,7 +1002,8 @@ def hue(selected_s="0"):
                         HUE.set_schedule_allweek(g0, endmins, False)
 
         scheduleform.populateform(DB)
-        return render_template("hue.html", selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
+        timestr = get_geo_timestr()
+        return render_template("hue.html", timestr=timestr, selected=sel, scheduleform=scheduleform, hue=get_hue_onoff(HUE))
 
 
 if __name__ == "__main__":
