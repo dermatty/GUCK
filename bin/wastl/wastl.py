@@ -891,7 +891,7 @@ def configmsg():
     return jsonify(feedback=f)
 
 
-def get_geo_timestr():
+def get_sunrise_sunset():
     o = ephem.Observer()
     o.lat = DB.db_query("ephem", "lat")
     o.long = DB.db_query("ephem", "long")
@@ -903,7 +903,37 @@ def get_geo_timestr():
     min0 = str(sunset0.minute) if len(str(sunset0.minute)) > 1 else "0" + str(sunset0.minute)
     hh1 = str(sunrise0.hour) if len(str(sunrise0.hour)) > 1 else "0" + str(sunrise0.hour)
     min1 = str(sunrise0.minute) if len(str(sunrise0.minute)) > 1 else "0" + str(sunrise0.minute)
+    return hh0, min0, hh1, min1
+
+
+def get_geo_timestr():
+    hh0, min0, hh1, min1 = get_sunrise_sunset()
     return "(" + hh0 + ":" + min0 + "h - " + hh1 + ":" + min1 + "h)"
+
+
+@app.route("/location/", methods=['GET', 'POST'])
+@flask_login.login_required
+def location():
+    global DB
+    GUCK_PATH = DB.db_query("remote", "guck_path")
+    REMOTE_HOST = DB.db_query("remote", "remote_host")
+    REMOTE_HOST_SHORT = DB.db_query("remote", "remote_host_short")
+    REMOTE_PORT = DB.db_query("remote", "remote_port")
+    REMOTE_SSH_PORT = DB.db_query("remote", "remote_ssh_port")
+    REMOTE_HOST_MAC = DB.db_query("remote", "remote_host_mac")
+    INTERFACE = DB.db_query("remote", "interface")
+    REMOTE_VIRTUALENV = DB.db_query("remote", "remote_virtualenv")
+    ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
+                            GUCK_PATH, REMOTE_VIRTUALENV)
+    location_name = DB.db_query("ephem", "location")
+    location_long = DB.db_query("ephem", "long")
+    location_lat = DB.db_query("ephem", "lat")
+    hh0, min0, hh1, min1 = get_sunrise_sunset()
+    sunset = hh0 + ":" + min0 + "h"
+    sunrise = hh1 + ":" + min1 + "h"
+    temp, hum = ZENZL.get_sens_temp()
+    return render_template("location.html", temp=round(temp, 1), hum=round(hum, 1), sunrise=sunrise, sunset=sunset,
+                           location_name=location_name, location_long=location_long, location_lat=location_lat)
 
 
 # @app.route("/hue/<sel>/", defaults={"param1": "0"}, methods=['GET', 'POST'])
