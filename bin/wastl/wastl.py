@@ -580,6 +580,7 @@ def guck(menu1, param1):
                 ZENZL.shutdown()
                 rep0.append("Killing guck, shutting down " + REMOTE_HOST_SHORT)
         elif param1 in ["4", "5", "6", "7", "8", "9"]:
+            res00 = ""
             if param1 == "4":
                 sstr = "pause"
             elif param1 == "5":
@@ -592,12 +593,27 @@ def guck(menu1, param1):
                 sstr = "record stop"
             elif param1 == "9":
                 sstr = "clear"
+                cursor_user = DB.db.userdata.find()
+                cursor_photo = DB.db.photodata.find()
+                # delete photolist in userdata in DB
+                for cu in cursor_user:
+                    user2 = cu["user"]
+                    DB.db_update2("userdata", "user", user2, "photolist", [])
+                # delete all photodata in DB
+                for cp in cursor_photo:
+                    id = cp["_id"]
+                    DB.db_delete_one("photodata", "_id", id)
+                # delete all photos in Folder
+                filelist = [f for f in os.listdir("./static/") if f.endswith(".jpg")]
+                for f in filelist:
+                    os.remove("./static/" + f)
+                res00 = "and removing detection photos!"
             stat, res0 = ZENZL.request_to_guck(sstr, REMOTE_HOST, REMOTE_PORT)
             if stat:
                 rep, repname, repfr = res0
-                rep0.append(rep)
+                rep0.append(rep + res00)
             else:
-                rep0.append(res0)
+                rep0.append(res0 + res00)
         elif param1 == "0":
             rep0 = []
             param1 = "1"
