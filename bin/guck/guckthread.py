@@ -1,14 +1,13 @@
 import sys
 sys.path.append("../../lib")
 
+import os
 import cv2
 import numpy as np
 import time
 import execnet
 import dill
 import signal
-import pbcvt
-import os
 from random import randint
 import logging, datetime
 
@@ -71,15 +70,23 @@ class Matcher:
         self.HOGSCALE = hogscale
         self.HOGTHRESH = hogthresh
         self.SCANRATE = scanrate
-        self.MOG2SENS = min(max(mog2sens,0), 10)
+        self.MOG2SENS = min(max(mog2sens, 0), 10)
         self.CNNMODEL = None
         self.AI_MODE = aimode.lower()
         self.HIST = 800 + (5 - self.MOG2SENS) * 199
         self.NIGHTMODE = False
 
         if self.AI_MODE == "cv2":
-            import pbcvt
-            self.GPUHOG = pbcvt.GPU_HOG(self.HOGSCALE,self.HOGTHRESH)
+            try:
+                osversion = os.popen("cat /etc/os-release").read().split("\n")[2].split("=")[1]
+            except:
+                osversion = "ubuntu"
+                if osversion == "ubuntu":
+                    import pbcvt
+                else:
+                    # this won't work as error in libboost python
+                    import pbcvt_arch as pbcvt
+            self.GPUHOG = pbcvt.GPU_HOG(self.HOGSCALE, self.HOGTHRESH)
 
             try:
                 cascade = pbcvt.CASCADE(haarpath, haarscale)

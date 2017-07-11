@@ -369,6 +369,7 @@ class GControl:
                     self.AI_MODE = "cv2"
         else:
                 self.AI_MODE = "cv2"
+                print("cv2")
 
         # cameras
         self.PTZ = {}

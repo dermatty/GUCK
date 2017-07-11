@@ -40,8 +40,9 @@ if _guck_home == -1:
 if _guck_home[-1] != "/":
         _guck_home += "/"
 # replace for ubuntuserver
-guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
-# guck_home = _guck_home
+guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs_neu/")
+#guck_home = _guck_home
+#print(guck_home)
 os.environ["GUCK_HOME"] = guck_home
 GUCK_HOME = os.environ["GUCK_HOME"]
 

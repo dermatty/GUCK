@@ -143,7 +143,9 @@ class ZenzLib:
 
     def startguck(self):
         etec_cmd00 = "nohup " + self.GUCK_PATH + "../../scripts/startguck.sh"
+        print(etec_cmd00)
         ssh = SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(self.REMOTE_HOST_SHORT, port=int(self.REMOTE_SSH_PORT))
         stdin, stdout, stderr = ssh.exec_command(etec_cmd00 + " > " + self.GUCK_PATH + "../../log/gucklog.log 2>&1 &")
+        print(stderr)

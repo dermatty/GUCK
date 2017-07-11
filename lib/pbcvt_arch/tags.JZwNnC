@@ -1,0 +1,129 @@
+CVBOOSTCONVERTER_HPP_	pyboostcvconverter.h	11;"	d
+NPY_NO_DEPRECATED_API	pyboostcvconverter.h	13;"	d
+pbcvt	pyboostcvconverter.h	/^namespace pbcvt{$/;"	n
+opencv_error	pyboostcvconverter.h	/^static PyObject* opencv_error = 0;$/;"	m	namespace:pbcvt
+ERRWRAP2	pyboostcvconverter.h	30;"	d
+failmsg	pyboostcvconverter.h	/^static int failmsg(const char *fmt, ...);$/;"	p	namespace:pbcvt
+failmsgp	pyboostcvconverter.h	/^static PyObject* failmsgp(const char *fmt, ...);$/;"	p	namespace:pbcvt
+PyAllowThreads	pyboostcvconverter.h	/^class PyAllowThreads;$/;"	x
+PyEnsureGIL	pyboostcvconverter.h	/^class PyEnsureGIL;$/;"	x
+REFCOUNT_OFFSET	pyboostcvconverter.h	/^static size_t REFCOUNT_OFFSET = (size_t)&(((PyObject*)0)->ob_refcnt) +$/;"	m	namespace:pbcvt
+pyObjectFromRefcount	pyboostcvconverter.h	/^static inline PyObject* pyObjectFromRefcount(const int* refcount)$/;"	f	namespace:pbcvt
+refcountFromPyObject	pyboostcvconverter.h	/^static inline int* refcountFromPyObject(const PyObject* obj)$/;"	f	namespace:pbcvt
+NumpyAllocator	pyboostcvconverter.h	/^class NumpyAllocator;$/;"	x
+fromMatToNDArray	pyboostcvconverter.h	/^PyObject* fromMatToNDArray(const Mat& m);$/;"	p	namespace:pbcvt
+fromNDArrayToMat	pyboostcvconverter.h	/^Mat fromNDArrayToMat(PyObject* o);$/;"	p	namespace:pbcvt
+matToNDArrayBoostConverter	pyboostcvconverter.h	/^struct matToNDArrayBoostConverter {$/;"	s	namespace:pbcvt
+convert	pyboostcvconverter.h	/^	static PyObject* convert(Mat const& m);$/;"	p	struct:pbcvt::matToNDArrayBoostConverter
+matFromNDArrayBoostConverter	pyboostcvconverter.h	/^struct matFromNDArrayBoostConverter {$/;"	s	namespace:pbcvt
+matFromNDArrayBoostConverter	pyboostcvconverter.h	/^	matFromNDArrayBoostConverter();$/;"	p	struct:pbcvt::matFromNDArrayBoostConverter
+convertible	pyboostcvconverter.h	/^	static void* convertible(PyObject* object);$/;"	p	struct:pbcvt::matFromNDArrayBoostConverter
+construct	pyboostcvconverter.h	/^	static void construct(PyObject* object,$/;"	p	struct:pbcvt::matFromNDArrayBoostConverter
+NPY_NO_DEPRECATED_API	pbcvt.cpp	1;"	d	file:
+PY_ARRAY_UNIQUE_SYMBOL	pbcvt.cpp	2;"	d	file:
+Point_pb	pbcvt.cpp	/^class Point_pb {$/;"	c	file:
+x	pbcvt.cpp	/^		int x, y, w, h;$/;"	m	class:Point_pb	file:
+y	pbcvt.cpp	/^		int x, y, w, h;$/;"	m	class:Point_pb	file:
+w	pbcvt.cpp	/^		int x, y, w, h;$/;"	m	class:Point_pb	file:
+h	pbcvt.cpp	/^		int x, y, w, h;$/;"	m	class:Point_pb	file:
+operator ==	pbcvt.cpp	/^		bool operator==(Point_pb const& n) const $/;"	f	class:Point_pb
+CASCADE	pbcvt.cpp	/^class CASCADE {$/;"	c	file:
+cascade_gpu	pbcvt.cpp	/^	cv::Ptr<cv::cuda::CascadeClassifier> cascade_gpu;$/;"	m	class:CASCADE	file:
+CASCADE	pbcvt.cpp	/^	CASCADE(std::string s, double scale) {$/;"	f	class:CASCADE
+detectMultiScale	pbcvt.cpp	/^	std::vector<Point_pb>  detectMultiScale(PyObject* inputImage) {$/;"	f	class:CASCADE
+GPU_HOG	pbcvt.cpp	/^class GPU_HOG {$/;"	c	file:
+gpu_hog	pbcvt.cpp	/^	cv::Ptr<cv::cuda::HOG> gpu_hog;$/;"	m	class:GPU_HOG	file:
+scale	pbcvt.cpp	/^	double scale;$/;"	m	class:GPU_HOG	file:
+hit_threshold	pbcvt.cpp	/^    double hit_threshold;$/;"	m	class:GPU_HOG	file:
+GPU_HOG	pbcvt.cpp	/^	GPU_HOG(double scale0, double ht0) {$/;"	f	class:GPU_HOG
+detectMultiScale	pbcvt.cpp	/^	std::vector<Point_pb>  detectMultiScale(PyObject* inputImage) {$/;"	f	class:GPU_HOG
+keypoint_pb	pbcvt.cpp	/^class keypoint_pb {$/;"	c	file:
+angle	pbcvt.cpp	/^		float angle;$/;"	m	class:keypoint_pb	file:
+class_id	pbcvt.cpp	/^		int class_id;$/;"	m	class:keypoint_pb	file:
+octave	pbcvt.cpp	/^		int octave;$/;"	m	class:keypoint_pb	file:
+pt	pbcvt.cpp	/^		boost::python::tuple pt;$/;"	m	class:keypoint_pb	file:
+response	pbcvt.cpp	/^		float response;$/;"	m	class:keypoint_pb	file:
+size	pbcvt.cpp	/^		float size;$/;"	m	class:keypoint_pb	file:
+operator ==	pbcvt.cpp	/^		bool operator==(keypoint_pb const& n) const $/;"	f	class:keypoint_pb
+GPU_ORB	pbcvt.cpp	/^class GPU_ORB {$/;"	c	file:
+orb	pbcvt.cpp	/^		cv::Ptr<cv::cuda::ORB> orb;		$/;"	m	class:GPU_ORB	file:
+keypoints0	pbcvt.cpp	/^		std::vector<keypoint_pb> keypoints0;$/;"	m	class:GPU_ORB	file:
+GPU_ORB	pbcvt.cpp	/^		GPU_ORB() {$/;"	f	class:GPU_ORB
+getkeypoints	pbcvt.cpp	/^		std::vector<keypoint_pb> getkeypoints() {$/;"	f	class:GPU_ORB
+detectAndCompute	pbcvt.cpp	/^		PyObject* detectAndCompute(PyObject* inputImage0, int x, int y, int w, int h) {$/;"	f	class:GPU_ORB
+CPU_ORB	pbcvt.cpp	/^class CPU_ORB {$/;"	c	file:
+orb	pbcvt.cpp	/^		cv::Ptr<cv::ORB> orb;		$/;"	m	class:CPU_ORB	file:
+keypoints0	pbcvt.cpp	/^		std::vector<keypoint_pb> keypoints0;$/;"	m	class:CPU_ORB	file:
+CPU_ORB	pbcvt.cpp	/^		CPU_ORB() {$/;"	f	class:CPU_ORB
+getkeypoints	pbcvt.cpp	/^		std::vector<keypoint_pb> getkeypoints() {$/;"	f	class:CPU_ORB
+detectAndCompute	pbcvt.cpp	/^		PyObject* detectAndCompute(PyObject* inputImage) {$/;"	f	class:CPU_ORB
+BGS_MOG2	pbcvt.cpp	/^class BGS_MOG2 {$/;"	c	file:
+mog2	pbcvt.cpp	/^		cv::Ptr<cv::BackgroundSubtractor> mog2;$/;"	m	class:BGS_MOG2	file:
+BGS_MOG2	pbcvt.cpp	/^		BGS_MOG2(int hist, int thresh) {$/;"	f	class:BGS_MOG2
+apply	pbcvt.cpp	/^		boost::python::tuple apply(PyObject* inputImage) {$/;"	f	class:BGS_MOG2
+pbcvt	pbcvt.cpp	/^namespace pbcvt {$/;"	n	file:
+dot	pbcvt.cpp	/^PyObject *dot(PyObject *left, PyObject *right) {$/;"	f	namespace:pbcvt
+test	pbcvt.cpp	/^PyObject *test(PyObject *left)$/;"	f	namespace:pbcvt
+init_ar	pbcvt.cpp	/^    static void *init_ar() {$/;"	f	namespace:pbcvt
+BOOST_PYTHON_MODULE	pbcvt.cpp	/^BOOST_PYTHON_MODULE(pbcvt)$/;"	f	namespace:pbcvt
+PYTHON_INCLUDE	Makefile	/^PYTHON_INCLUDE = \/usr\/include\/python3.6m #\/usr\/include\/x86_64-linux-gnu\/python3.5m \/usr\/include\/numpy #\/usr\/include\/python3.5$/;"	m
+PYTHON_LIB	Makefile	/^PYTHON_LIB = \/usr\/lib\/python3.6\/x86_64-linux-gnu$/;"	m
+CUDA_INCLUDE	Makefile	/^CUDA_INCLUDE = \/opt\/cuda\/include$/;"	m
+CUDA_LIB	Makefile	/^CUDA_LIB = \/opt\/cuda\/lib64$/;"	m
+BOOST_INC	Makefile	/^BOOST_INC = \/usr\/include$/;"	m
+BOOST_LIB	Makefile	/^BOOST_LIB = \/usr\/lib$/;"	m
+OPENCV_LIB	Makefile	/^OPENCV_LIB = \/usr\/lib$/;"	m
+OPENCV_INC	Makefile	/^OPENCV_INC = \/usr\/include$/;"	m
+OPENCV_LIBS	Makefile	/^OPENCV_LIBS = $$(pkg-config --libs opencv)$/;"	m
+TARGET	Makefile	/^TARGET = pbcvt$/;"	m
+CONVERSION	Makefile	/^CONVERSION = pyboostcvconverter$/;"	m
+NO_IMPORT_ARRAY	pyboostcvconverter.cpp	8;"	d	file:
+PY_ARRAY_UNIQUE_SYMBOL	pyboostcvconverter.cpp	9;"	d	file:
+pbcvt	pyboostcvconverter.cpp	/^namespace pbcvt {$/;"	n	file:
+failmsg	pyboostcvconverter.cpp	/^static int failmsg(const char *fmt, ...) {$/;"	f	namespace:pbcvt
+failmsgp	pyboostcvconverter.cpp	/^static PyObject* failmsgp(const char *fmt, ...)$/;"	f	namespace:pbcvt
+PyAllowThreads	pyboostcvconverter.cpp	/^class PyAllowThreads {$/;"	c	namespace:pbcvt	file:
+PyAllowThreads	pyboostcvconverter.cpp	/^	PyAllowThreads() :$/;"	f	class:pbcvt::PyAllowThreads
+~PyAllowThreads	pyboostcvconverter.cpp	/^	~PyAllowThreads() {$/;"	f	class:pbcvt::PyAllowThreads
+_state	pyboostcvconverter.cpp	/^	PyThreadState* _state;$/;"	m	class:pbcvt::PyAllowThreads	file:
+PyEnsureGIL	pyboostcvconverter.cpp	/^class PyEnsureGIL {$/;"	c	namespace:pbcvt	file:
+PyEnsureGIL	pyboostcvconverter.cpp	/^	PyEnsureGIL() :$/;"	f	class:pbcvt::PyEnsureGIL
+~PyEnsureGIL	pyboostcvconverter.cpp	/^	~PyEnsureGIL() {$/;"	f	class:pbcvt::PyEnsureGIL
+_state	pyboostcvconverter.cpp	/^	PyGILState_STATE _state;$/;"	m	class:pbcvt::PyEnsureGIL	file:
+ARG_NONE	pyboostcvconverter.cpp	/^	ARG_NONE = 0, ARG_MAT = 1, ARG_SCALAR = 2$/;"	e	enum:pbcvt::__anon1	file:
+ARG_MAT	pyboostcvconverter.cpp	/^	ARG_NONE = 0, ARG_MAT = 1, ARG_SCALAR = 2$/;"	e	enum:pbcvt::__anon1	file:
+ARG_SCALAR	pyboostcvconverter.cpp	/^	ARG_NONE = 0, ARG_MAT = 1, ARG_SCALAR = 2$/;"	e	enum:pbcvt::__anon1	file:
+NumpyAllocator	pyboostcvconverter.cpp	/^class NumpyAllocator:$/;"	c	namespace:pbcvt	file:
+NumpyAllocator	pyboostcvconverter.cpp	/^	NumpyAllocator() {$/;"	f	class:pbcvt::NumpyAllocator
+~NumpyAllocator	pyboostcvconverter.cpp	/^	~NumpyAllocator() {$/;"	f	class:pbcvt::NumpyAllocator
+allocate	pyboostcvconverter.cpp	/^	UMatData* allocate(PyObject* o, int dims, const int* sizes, int type,$/;"	f	class:pbcvt::NumpyAllocator
+allocate	pyboostcvconverter.cpp	/^	UMatData* allocate(int dims0, const int* sizes, int type, void* data,$/;"	f	class:pbcvt::NumpyAllocator
+allocate	pyboostcvconverter.cpp	/^	bool allocate(UMatData* u, int accessFlags,$/;"	f	class:pbcvt::NumpyAllocator
+deallocate	pyboostcvconverter.cpp	/^	void deallocate(UMatData* u) const {$/;"	f	class:pbcvt::NumpyAllocator
+stdAllocator	pyboostcvconverter.cpp	/^	const MatAllocator* stdAllocator;$/;"	m	class:pbcvt::NumpyAllocator	file:
+g_numpyAllocator	pyboostcvconverter.cpp	/^NumpyAllocator g_numpyAllocator;$/;"	m	namespace:pbcvt	file:
+fromMatToNDArray	pyboostcvconverter.cpp	/^PyObject* fromMatToNDArray(const Mat& m) {$/;"	f	namespace:pbcvt
+fromNDArrayToMat	pyboostcvconverter.cpp	/^Mat fromNDArrayToMat(PyObject* o) {$/;"	f	namespace:pbcvt
+convert	pyboostcvconverter.cpp	/^PyObject* matToNDArrayBoostConverter::convert(Mat const& m) {$/;"	f	class:pbcvt::matToNDArrayBoostConverter
+matFromNDArrayBoostConverter	pyboostcvconverter.cpp	/^matFromNDArrayBoostConverter::matFromNDArrayBoostConverter() {$/;"	f	class:pbcvt::matFromNDArrayBoostConverter
+convertible	pyboostcvconverter.cpp	/^void* matFromNDArrayBoostConverter::convertible(PyObject* object) {$/;"	f	class:pbcvt::matFromNDArrayBoostConverter
+construct	pyboostcvconverter.cpp	/^void matFromNDArrayBoostConverter::construct(PyObject* object,$/;"	f	class:pbcvt::matFromNDArrayBoostConverter
+BGS_MOG2	__init__.py	/^from pbcvt_arch.pbcvt import BGS_MOG2, GPU_HOG, CPU_ORB, GPU_ORB, CASCADE$/;"	i
+GPU_HOG	__init__.py	/^from pbcvt_arch.pbcvt import BGS_MOG2, GPU_HOG, CPU_ORB, GPU_ORB, CASCADE$/;"	i
+CPU_ORB	__init__.py	/^from pbcvt_arch.pbcvt import BGS_MOG2, GPU_HOG, CPU_ORB, GPU_ORB, CASCADE$/;"	i
+GPU_ORB	__init__.py	/^from pbcvt_arch.pbcvt import BGS_MOG2, GPU_HOG, CPU_ORB, GPU_ORB, CASCADE$/;"	i
+CASCADE	__init__.py	/^from pbcvt_arch.pbcvt import BGS_MOG2, GPU_HOG, CPU_ORB, GPU_ORB, CASCADE$/;"	i
+cv2	testcvgpu.py	/^import cv2$/;"	i
+time	testcvgpu.py	/^import time$/;"	i
+pyGpu_hog	testcvgpu.py	/^from cvgpu import pyGpu_hog, pyGpu_BGS_MOG2$/;"	i
+pyGpu_BGS_MOG2	testcvgpu.py	/^from cvgpu import pyGpu_hog, pyGpu_BGS_MOG2$/;"	i
+surl	testcvgpu.py	/^surl = "http:\/\/admin:pascal29@dlink1.iv.at:81\/video.cgi#" $/;"	v
+video	testcvgpu.py	/^video = "video2.h264"$/;"	v
+CAP	testcvgpu.py	/^CAP = cv2.VideoCapture(video)$/;"	v
+gpuhog	testcvgpu.py	/^gpuhog = pyGpu_hog(1.15, 0)$/;"	v
+gpumog2	testcvgpu.py	/^gpumog2 = pyGpu_BGS_MOG2()$/;"	v
+cpuhog	testcvgpu.py	/^cpuhog = cv2.HOGDescriptor()$/;"	v
+t	testcvgpu.py	/^	t = time.time()$/;"	v
+gpuhogrects	testcvgpu.py	/^	gpuhogrects = gpuhog.detectMultiScale(img)$/;"	v
+vi	testcvgpu.py	/^	vi = gpumog2.apply(img)$/;"	v
+ch	testcvgpu.py	/^	ch = cv2.waitKey(1) & 0xFF$/;"	v
