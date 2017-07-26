@@ -93,7 +93,7 @@ class ZenzLib:
 
     def shutdown(self):
         hostn = self.REMOTE_HOST_SHORT
-        procstr = "/sbin/shutdown +0"
+        procstr = "/sbin/shutdown -h now"
         ssh = subprocess.Popen(["ssh", hostn, procstr], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
         return ssh
 

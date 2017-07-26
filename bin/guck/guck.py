@@ -359,6 +359,7 @@ class GControl:
                     import keras
                     from keras.utils import np_utils
                     self.CNNMODEL = keras.models.load_model(self.CNN_PATH)
+                    print(self.CNN_PATH2)
                     self.CNNMODEL2 = keras.models.load_model(self.CNN_PATH2)
                     self.CNNMODEL3 = keras.models.load_model(self.CNN_PATH3)
                     self.AI_MODE = "cnn"
