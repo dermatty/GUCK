@@ -38,7 +38,9 @@ def getstatus(shmlist, recording, alarmrunning):
         global AIMODE
         global HCLIMIT
         global NIGHTMODE
+        osversion = os.popen("cat /etc/os-release").read().split("\n")[2].split("=")[1].replace('"', '')
         ret = "------- General -------"
+        ret += "\nOS: " + osversion
         ret += "\nVersion: " + os.environ["GUCK_VERSION"]
         ret += "\nRecording: "
         ret += "YES" if recording else "NO"

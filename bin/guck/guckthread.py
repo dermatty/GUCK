@@ -78,14 +78,14 @@ class Matcher:
 
         if self.AI_MODE == "cv2":
             try:
-                osversion = os.popen("cat /etc/os-release").read().split("\n")[2].split("=")[1]
+                osversion = os.popen("cat /etc/os-release").read().split("\n")[2].split("=")[1].replace('"', '')
             except:
                 osversion = "ubuntu"
-                if osversion == "ubuntu":
-                    import pbcvt
-                else:
-                    # this won't work as error in libboost python
-                    import pbcvt_arch as pbcvt
+            if osversion == "ubuntu":
+                import pbcvt
+            else:
+                # this won't work as error in libboost python
+                import pbcvt_arch as pbcvt
             self.GPUHOG = pbcvt.GPU_HOG(self.HOGSCALE, self.HOGTHRESH)
 
             try:
@@ -173,7 +173,7 @@ class Matcher:
         if len(kpnew) > 0 and len(kpold) > 0:
             matchesbf = self.BF.match(desnew, desold)
             detectratio = (len(matchesbf)/len(kpnew))
-            matches = sorted(matchesbf, key = lambda x:x.distance)
+            matches = sorted(matchesbf, key=lambda x: x. distance)
             matches = matches[:20]
             minmatch = min(m.distance for m in matches)
             res1 = 1
