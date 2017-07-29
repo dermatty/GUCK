@@ -97,6 +97,11 @@ class ZenzLib:
         ssh = subprocess.Popen(["ssh", hostn, "/sbin/shutdown", "-h now"], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
         return ssh
 
+    def reboot(self):
+        hostn = self.REMOTE_HOST_SHORT
+        ssh = subprocess.Popen(["ssh", hostn, "/sbin/shutdown", "r"], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
+        return ssh
+
     def ping(self):
         # return:  status, pingstr
         #     status:    1 ... host alive,

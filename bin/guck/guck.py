@@ -1080,7 +1080,7 @@ class GControl:
                 self.SSHSERVER.set_SHMLIST(shmlist)
                 SEMAPHORE.release()
 
-            time.sleep(0.005)
+            time.sleep(0.05)
 
         self.shutdown()
         return

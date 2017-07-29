@@ -60,13 +60,18 @@ def getstatus(shmlist, recording, alarmrunning):
         mem_crit = False
         if perc_used > 85:
             mem_crit = True
-        cpu_perc = psutil.cpu_percent(interval=0.25, percpu=False)
+        cpu_perc0 = psutil.cpu_percent(interval=0.25, percpu=True)
+        cpu_avg = sum(cpu_perc0)/float(len(cpu_perc0))
+        cpu_perc = (max(cpu_perc0) * 0.6 + cpu_avg * 0.4)/2
         cpu_crit = False
         if cpu_perc > 0.8:
             cpu_crit = True
         ret += "\nRAM: " + str(perc_used) + "% ( =" + str(used_mem) + " GB) of overall " + str(overall_mem) + \
                " GB used"
-        ret += "\nCPU: " + str(cpu_perc) + "% utilized"
+        ret += "\nCPU: " + str(round(cpu_avg, 1)) + "% ("
+        for cpu0 in cpu_perc0:
+                ret += str(cpu0) + " "
+        ret += ")"
         sensors.init()
         cpu_temp = []
         for chip in sensors.iter_detected_chips():
@@ -91,8 +96,7 @@ def getstatus(shmlist, recording, alarmrunning):
                                    stdout=subprocess.PIPE).stdout.readlines()[1]
         gputemp_str = gputemp.decode("utf-8").rstrip()
         gpuutil_str = gpuutil.decode("utf-8").rstrip()
-        ret += "\nGPU temp.: " + gputemp_str + "C"
-        ret += "\nGPU util.: " + gpuutil_str
+        ret += "\nGPU: " + gputemp_str + "°C" + " / " + gpuutil_str + " util."
         if float(gputemp_str) > 70.0:
             gpu_crit = True
         else:
@@ -802,6 +806,7 @@ class SMTPServer:
                 return True
             except:
                 return False
+
 
 if __name__ == "__main__":
     pass
