@@ -52,3 +52,5 @@ ENV/
 # mkdocs documentation
 /site
 
+data/certs/
+bin/wastl/flask_session/
