@@ -99,7 +99,7 @@ class ZenzLib:
 
     def reboot(self):
         hostn = self.REMOTE_HOST_SHORT
-        ssh = subprocess.Popen(["ssh", hostn, "/sbin/shutdown", "r"], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
+        ssh = subprocess.Popen(["ssh", hostn, "/sbin/shutdown", "-r now"], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
         return ssh
 
     def ping(self):

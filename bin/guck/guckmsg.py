@@ -90,9 +90,13 @@ def getstatus(shmlist, recording, alarmrunning):
         else:
             cpu_crit = False
         # gpu info
-        gputemp = subprocess.Popen(["/usr/bin/nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv"],
+        if osversion == "Gentoo/Linux":
+                smifn = "/opt/bin/nvidia-smi"
+        else:
+                smifn = "/usr/bin/nvidia-smi"
+        gputemp = subprocess.Popen([smifn, "--query-gpu=temperature.gpu", "--format=csv"],
                                    stdout=subprocess.PIPE).stdout.readlines()[1]
-        gpuutil = subprocess.Popen(["/usr/bin/nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv"],
+        gpuutil = subprocess.Popen([smifn, "--query-gpu=utilization.gpu", "--format=csv"],
                                    stdout=subprocess.PIPE).stdout.readlines()[1]
         gputemp_str = gputemp.decode("utf-8").rstrip()
         gpuutil_str = gpuutil.decode("utf-8").rstrip()

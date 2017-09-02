@@ -55,6 +55,7 @@ class Detection:
         self.descrkp, self.descrdes = self.descriptor.detectAndCompute(self.frame[y:y+h, x:x+w], None)
         return
 
+
 class Matcher:
 
     def __init__(self, surl, minarea, hogscale, hogthresh, scanrate, mog2sens,
