@@ -138,17 +138,18 @@ class Matcher:
     def getcaptionandprocess(self):
         ret, frame = self.CAP.read()
         t0 = time.time()
+
         if ret:
             new_detections = []
             gray = cv2.cvtColor(frame.copy(), cv2.COLOR_BGR2GRAY)
             fggray = self.FGBG.apply(gray, 1 / self.HIST)
-            # fggray = cv2.GaussianBlur(fggray, (3, 3), 0)
+            #fggray = cv2.GaussianBlur(fggray, (3, 3), 0)
             fggray = cv2.medianBlur(fggray, 5)
             edged = auto_canny(fggray)
             closed = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, self.KERNEL2)
             _, cnts, _ = cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cnts0 = [cv2.boundingRect(c) for c in cnts]
-            rects = [(x, y, w, h) for x, y, w, h in cnts0 if w * h > self.MINAREA]
+            rects = [ (x,y,w,h) for x,y,w,h in cnts0 if w * h > self.MINAREA]
 
             for r in rects:
                 new_detections.append(Detection(-1, frame, t0, r, self.DESCR, 1, 0))

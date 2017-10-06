@@ -18,7 +18,7 @@ while True:
     ok = ""
     while ok.lower() not in ["y", "n"]:
         ok = input("Add new user/modify existing one? [Y/N] ")
-    if ok == "n":
+    if ok.lower() == "n":
         break
     user = input("\nEnter user to add or to modify: ")
     if user in pwdict:
