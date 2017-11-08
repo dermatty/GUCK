@@ -1,5 +1,4 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
+
 *.py[cod]
 *$py.class
 
@@ -54,3 +53,5 @@ ENV/
 
 data/certs/
 bin/wastl/flask_session/
+bin/guck/#guck.py#
+bin/guck/#guckthread.py# 
