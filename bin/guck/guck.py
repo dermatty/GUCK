@@ -34,6 +34,8 @@ import signal
 import configparser
 from Sunset import Sun
 from git import Repo
+import keras
+from keras.utils import np_utils
 
 
 __author__ = "Stephan Untergrabner"
@@ -95,7 +97,7 @@ SEM_CAM.release()
 class CameraDataClass:
         def __init__(self, enable, channel, gateway, status, inputmode, videofile, recordfile, camurl, camname, hostip,
                      hostvenv, minarearect, haarpath, haarpath2, haarscale, hogscale, hogthresh, scanrate, ptzmode,
-                     ptzright, ptzleft, ptzup, ptzdown, reboot, mog2sens, aimode):
+                     ptzright, ptzleft, ptzup, ptzdown, reboot, mog2sens):
             self.CHANNEL = channel
             self.GATEWAY = gateway
 
@@ -131,7 +133,7 @@ class CameraDataClass:
             self.TSLIST = []
             self.OUTVIDEO = None
 
-            self.AI_MODE = aimode
+            self.AI_MODE = "cnn"
 
         def getall(self):
             ret = (self.INPUT_MODE, self.CAMNAME, self.CAMURL, self.VIDEOFILE, self.MIN_AREA_RECT, self.HAAR_PATH,
@@ -259,7 +261,6 @@ class GControl:
         # telegram
         self.DO_TELEGRAM = self.DB.db_query("telegram", "do_telegram")
         self.TELEGRAM_MODE = self.DB.db_query("telegram", "mode")
-        print(">>>>", self.TELEGRAM_MODE)
         self.TELEGRAM_TOKEN = self.DB.db_query("telegram", "token")
         self.TELEGRAM_CHATID = [int(x) for x in self.DB.db_query("telegram", "chatidlist")]
         self.MAXT_TELEGRAM = self.DB.db_query("telegram", "maxt")
@@ -338,7 +339,7 @@ class GControl:
         self.PHOTO_CUTOFF_LEN = self.DB.db_query("photo", "cutoff_len")
 
         # AI
-        taimode = self.AI_MODE = self.DB.db_query("ai", "ai_mode")
+        self.AI_MODE = "cnn"
         self.CNN_PATH = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "cnn_path")
         self.CNN_PATH2 = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "cnn_path2")
         self.CNN_PATH3 = os.environ["GUCK_HOME"] + self.DB.db_query("ai", "cnn_path3")
@@ -354,23 +355,14 @@ class GControl:
         self.AI = None
         self.CPUHOG = cv2.HOGDescriptor()
         self.CPUHOG.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
-        if self.AI_MODE.lower() == "cnn":
-                try:
-                    import keras
-                    from keras.utils import np_utils
-                    self.CNNMODEL = keras.models.load_model(self.CNN_PATH)
-                    print(self.CNN_PATH2)
-                    self.CNNMODEL2 = keras.models.load_model(self.CNN_PATH2)
-                    self.CNNMODEL3 = keras.models.load_model(self.CNN_PATH3)
-                    self.AI_MODE = "cnn"
-                    logger.info("Created Keras CNN model for people detection")
-                except Exception as e:
-                    logger.warning("Cannot load CNN model, applying fallback to CV2 GPU: " + str(e))
-                    self.CNNMODEL = "none"
-                    self.AI_MODE = "cv2"
-        else:
-                self.AI_MODE = "cv2"
-                print("cv2")
+        try:
+            self.CNNMODEL = keras.models.load_model(self.CNN_PATH)
+            self.CNNMODEL2 = keras.models.load_model(self.CNN_PATH2)
+            self.CNNMODEL3 = keras.models.load_model(self.CNN_PATH3)
+            logger.info("Created Keras CNN model for people detection")
+        except Exception as e:
+            logger.warning(str(e) + ": cannot load CNN model, applying fallback to CV2 GPU, exiting ...")
+            sys.exit()
 
         # cameras
         self.PTZ = {}
@@ -414,7 +406,7 @@ class GControl:
                                                            tvideofile, trecordfile, tcamurl, tcamname,
                                                            thostip, thostvenv, tminarearect, thaarpath, thaarpath2,
                                                            thaarscale, thogscale, thogthresh, tscanrate, tptzm,
-                                                           tptzr, tptzl, tptzu, tptzd, treboot, tmog2sens, taimode))
+                                                           tptzr, tptzl, tptzu, tptzd, treboot, tmog2sens))
                 except:
                     logger.error("Wrong keys/data for camera" + str(i + 1) + ", exiting ...")
                     sys.exit()
@@ -872,7 +864,7 @@ class GControl:
                 mogsens = self.SSHSERVER.get_mogsens_(i)
                 cmtr.set_outdata((clearflag, mogsens, self.NIGHTMODE))
                 exp00 = cmtr.get_indata()
-                if exp00 != None:
+                if exp00 is not None:
                     ret, frame0, objlist, tx0 = exp00
                     if self.AI_MODE == "cnn":
                         objlist = self.get_cnn_classification(frame0, objlist)

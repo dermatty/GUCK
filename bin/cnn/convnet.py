@@ -6,7 +6,7 @@ import time
 import keras
 from keras.models import Sequential, Model
 from keras.layers import Flatten, Dense, Dropout, Reshape, Permute, Activation, Input, merge
-from keras.layers import Convolution2D, MaxPooling2D, ZeroPadding2D
+from keras.layers import Conv2D, MaxPooling2D, ZeroPadding2D
 from keras.utils import np_utils
 import cv2
 import os
@@ -30,81 +30,31 @@ def show_images(nr, x, y):
             ch = cv2.waitKey(1) & 0xFF
 
 
-def VGG_16(input_shape, nb_classes, nb_ActivationNodes):
-    model = Sequential()
-
-    model.add(ZeroPadding2D((1, 1), input_shape=input_shape))
-    model.add(Convolution2D(32, 3, 3, activation='relu', name='conv1_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(32, 3, 3, activation='relu', name='conv1_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(32, 3, 3, activation='relu', name='conv2_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(32, 3, 3, activation='relu', name='conv2_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv3_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv3_2'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv3_3'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv4_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv4_2'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv4_3'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv5_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv5_2'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv5_3'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(Flatten(name="flatten"))
-    model.add(Dense(nb_ActivationNodes, activation='relu', name='dense_1'))
-    model.add(Dropout(0.5))
-    model.add(Dense(nb_ActivationNodes, activation='relu', name='dense_2'))
-    model.add(Dropout(0.5))
-    model.add(Dense(nb_classes, name='dense_3'))
-    model.add(Activation("softmax", name="softmax"))
-    return model
-
-
 def CIFAR(input_shape, nb_classes, nb_ActivationNodes):
     model = Sequential()
     nb_filters = 32
     # size of pooling area for max pooling
-    pool_size = (2, 2)
+    pool_size = [2, 2]
     # convolution kernel size
     kernel_size = (3, 3)
-    model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                            border_mode='valid', input_shape=input_shape))
+    model.add(Conv2D(nb_filters, kernel_size, padding='valid', input_shape=input_shape))
     model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
+    model.add(Conv2D(nb_filters, (kernel_size[0], kernel_size[1])))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=pool_size))
     model.add(Dropout(0.25))
 
-    model.add(Convolution2D(64, 3, 3, border_mode='same'))
+    model.add(Conv2D(64, kernel_size, padding='same'))
     model.add(Activation('relu'))
-    model.add(Convolution2D(64, 3, 3))
+    model.add(Conv2D(64, (3, 3)))
     model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+    model.add(MaxPooling2D(pool_size=pool_size))
+    model.add(Dropout(rate=0.25))
 
     model.add(Flatten())
     model.add(Dense(512))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    model.add(Dropout(rate=0.5))
     model.add(Dense(nb_classes))
     model.add(Activation('softmax'))
     return model
@@ -114,35 +64,34 @@ def CIFAR_medium(input_shape, nb_classes, nb_ActivationNodes):
     model = Sequential()
     nb_filters = 32
     # size of pooling area for max pooling
-    pool_size = (2, 2)
+    pool_size = [2, 2]
     # convolution kernel size
     kernel_size = (5, 5)
-    model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1],
-                            border_mode='valid', input_shape=input_shape))
+    model.add(Conv2D(nb_filters, kernel_size, padding='valid', input_shape=input_shape))
     model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=pool_size))
-    model.add(Dropout(0.25))
-
-    model.add(Convolution2D(nb_filters * 2, kernel_size[0], kernel_size[1], border_mode='same'))
-    model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters * 2, kernel_size[0], kernel_size[1]))
+    model.add(Conv2D(nb_filters, kernel_size))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=pool_size))
     model.add(Dropout(0.25))
 
-    model.add(Convolution2D(nb_filters * 3, kernel_size[0], kernel_size[1], border_mode='same'))
+    model.add(Conv2D(nb_filters * 2, kernel_size, padding='same'))
     model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters * 3, kernel_size[0], kernel_size[1], border_mode='same'))
+    model.add(Conv2D(nb_filters * 2, kernel_size))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=pool_size))
     model.add(Dropout(0.25))
+
+    model.add(Conv2D(nb_filters * 3, kernel_size, padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(nb_filters * 3, kernel_size, padding='same'))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=pool_size))
+    model.add(Dropout(rate=0.25))
 
     model.add(Flatten())
     model.add(Dense(nb_ActivationNodes))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    model.add(Dropout(rate=0.5))
     model.add(Dense(nb_classes))
     model.add(Activation('softmax'))
     return model
@@ -152,93 +101,36 @@ def CIFAR_extended(input_shape, nb_classes, nb_ActivationNodes):
     model = Sequential()
     nb_filters = 32
     # size of pooling area for max pooling
-    pool_size = (2, 2)
+    pool_size = [2, 2]
     # convolution kernel size
     kernel_size = (7, 7)
-    model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1], border_mode='valid',
-                            input_shape=input_shape))
+    model.add(Conv2D(nb_filters, kernel_size, padding='valid', input_shape=input_shape))
     model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters, kernel_size[0], kernel_size[1]))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=pool_size))
-    model.add(Dropout(0.25))
-
-    model.add(Convolution2D(nb_filters * 2, kernel_size[0], kernel_size[1], border_mode='same'))
-    model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters * 2, kernel_size[0], kernel_size[1]))
+    model.add(Conv2D(nb_filters, kernel_size))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=pool_size))
     model.add(Dropout(0.25))
 
-    model.add(Convolution2D(nb_filters * 4, kernel_size[0], kernel_size[1], border_mode='same'))
+    model.add(Conv2D(nb_filters * 2, kernel_size, padding='same'))
     model.add(Activation('relu'))
-    model.add(Convolution2D(nb_filters * 4, kernel_size[0], kernel_size[1], border_mode='same'))
+    model.add(Conv2D(nb_filters * 2, kernel_size))
     model.add(Activation('relu'))
     model.add(MaxPooling2D(pool_size=pool_size))
     model.add(Dropout(0.25))
+
+    model.add(Conv2D(nb_filters * 4, kernel_size, padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(nb_filters * 4, kernel_size, padding='same'))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=pool_size))
+    model.add(Dropout(rate=0.25))
 
     model.add(Flatten())
     model.add(Dense(nb_ActivationNodes))
     model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    model.add(Dropout(rate=0.5))
     model.add(Dense(nb_classes))
     model.add(Activation('softmax'))
-    return model
-
-
-def VGG_19(input_shape, nb_classes, nb_ActivationNodes):
-    model = Sequential()
-
-    model.add(ZeroPadding2D((1, 1), input_shape=input_shape))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu', name='conv1_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(128, 3, 3, activation='relu', name='conv2_2'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_2'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_3'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(256, 3, 3, activation='relu', name='conv3_4'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_2'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_3'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv4_4'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_1'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_2'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_3'))
-    model.add(ZeroPadding2D((1, 1)))
-    model.add(Convolution2D(512, 3, 3, activation='relu', name='conv5_4'))
-    model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-    model.add(Flatten())
-    model.add(Dense(nb_ActivationNodes, activation='relu', name='dense_1'))
-    model.add(Dropout(0.5))
-    model.add(Dense(nb_ActivationNodes, activation='relu', name='dense_2'))
-    model.add(Dropout(0.5))
-    model.add(Dense(nb_classes, name='dense_3'))
-    model.add(Activation("softmax"))
-
     return model
 
 
@@ -274,7 +166,6 @@ else:
 
 batch_size = 64
 nb_classes = 2
-# 20 für VGG16, 40 für CIFAR
 
 # input image dimensions
 img_rows, img_cols = 128, 128
@@ -346,7 +237,7 @@ for (CNN_MODEL, NB_EPOCH) in zip(CNN_MODEL_LIST, NB_EPOCH_LIST):
           str(NB_EPOCH) + " epochs!")
     print("-------------------------------------------------")
     model.fit(X_train, Y_train, batch_size=batch_size,
-              nb_epoch=NB_EPOCH, verbose=1,
+              epochs=NB_EPOCH, verbose=1,
               validation_data=(X_test, Y_test))
     fn = "/media/nfs/NFS_Projekte/GIT/GUCK/data/cnn/guck_cnn_" + CNN_MODEL + "_" + OPT + ".h5"
     model.save(fn)
