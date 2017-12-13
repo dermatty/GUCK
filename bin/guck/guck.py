@@ -4,7 +4,6 @@ import sys
 sys.path.append("../../lib")
 
 import ephem
-import theano
 import guckmongo
 from bson.objectid import ObjectId
 import cv2
