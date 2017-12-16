@@ -1,5 +1,5 @@
 cd /media/nfs/NFS_Projekte/GIT/GUCK/bin/guck
-OS=$(cat /etc/os-release | sed '3q;d')
+OS=$(cat /etc/os-release | sed '2q;d')
 
 if [ "$OS" == "ID=ubuntu" ]; then
    # cuda 8.0
@@ -25,6 +25,18 @@ if [ "$OS" == "ID=arch" ]; then
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/cuda/lib64
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/cuda/extras/CUPTI/lib64
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+fi
+
+if [ "$OS" == "ID=gentoo" ]; then
+        # virtualenvwrapper
+        export WORKON_HOME=~/.virtualenvs
+        source /usr/bin/virtualenvwrapper.sh
+
+        export CUDA_HOME=/opt/cuda
+        export PATH=$PATH:/opt/cuda/bin
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/cuda/lib64
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/cuda/extras/CUPTI/lib64
+        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 fi
 
 /home/stephan/.virtualenvs/cvp0/bin/python /media/nfs/NFS_Projekte/GIT/GUCK/bin/guck/guck.py
