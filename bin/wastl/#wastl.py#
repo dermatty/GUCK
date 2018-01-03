@@ -446,7 +446,7 @@ def detections():
                     detlist.append((photoname, tm))
                     fn = "./static/" + photoname
                     cv2.imwrite(fn, frame)
-                except Exception:
+                except:
                     thresh += 1
             DB.db_update2("userdata", "user", user0, "no_newdetections", 0)
     return render_template("detections.html", detlist=detlist)
