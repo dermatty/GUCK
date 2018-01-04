@@ -24,13 +24,10 @@ import http
 from urllib.parse import urlparse
 import certifi
 from threading import Thread
+import json
 
-updater = None
-
-# NEST
-urllib3.disable_warnings()
-NEST_API_URL = "https://developer-api.nest.com"
-TOKEN = "BLABLABLA"
+UPDATER = None
+NESTSS = None
 
 # try to get config & DB
 try:
@@ -42,6 +39,12 @@ try:
 except Exception as e:
     print(str(e) + ": Cannot get ZENZ config for DB, exiting ...")
     sys.exit()
+
+# NEST
+urllib3.disable_warnings()
+NEST_API_URL = "https://developer-api.nest.com"
+NESTTOKEN = DB.db_query("nest", "token")
+
 # get & set GUCK_HOME
 try:
         _guck_home = DB.db_query("basic", "guck_home")
@@ -67,9 +70,12 @@ GUCK_HOME = os.environ["GUCK_HOME"]
 
 
 def sighandler(signum, frame):
-    global updater
-    updater.stop()
-    # nest stop
+    global UPDATER
+    global NESTSS
+    logger.warning("Telegram shutting down ...")
+    UPDATER.stop()
+    logger.warning("NEST shutting down ...")
+    NESTSS.client.close()
     sys.exit()
 
 
@@ -184,7 +190,7 @@ class Nest_sse(Thread):
         self.TOKEN = token
         self.API_ENDPOINT = api_endpoint
         self.STATUS = 1
-        self.MSG = ""
+        self.client = None
 
     def run(self):
         headers0 = {
@@ -205,38 +211,47 @@ class Nest_sse(Thread):
             response = conn.getresponse()
             if response.status != 200:
                 self.STATUS = -2
-                self.MSG = "Cannot connect, redirect with non 200 response, aborting ..."
+                logger.error("Cannot connect to NEST, redirect with non 200 response, aborting ...")
                 return
             url = "https://" + redirectLocation.netloc
 
-        url += "/structures/f1iJ7Qyvwlr6dvj2MMhHl9VVSqYQ11gMpl1bfDYOESORRo7IkewcYw/away"
-        # url += "/devices/smoke_co_alarms/OLK-rC0gUkeZ9nH3no2m-iMePXBie9RS/last_connection"
         http0 = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
         response = http0.request('GET', url, headers=headers0, preload_content=False)
-        print(url)
 
         if response.status != 200:
             self.STATUS = -2,
-            self.MSG = "Cannot connect to redirect, aborting ..."
+            logger.error("Cannot connect to redirected NEST, aborting ...")
             return
         try:
-            client = sseclient.SSEClient(response)
+            self.client = sseclient.SSEClient(response)
         except Exception as e:
             self.STATUS = -2,
-            self.MSG = str(e)
-
+            logger.error(str(e))
+        logger.info("NEST: Connected to " + url)
         self.STATUS = 1
-        print("Waiting for event ...")
+        logger.info("Waiting for NEST events ...")
 
-        for event in client.events():  # returns a generator
+        self.smokeco = None
+        self.away = None
+
+        for event in self.client.events():  # returns a generator
             try:
                 event_type = event.event
                 print("event: ", event_type)
                 if event_type == 'open':  # not always received here
                     print("The event stream has been opened")
                 elif event_type == 'put':
-                    print("The data has changed (or initial data sent)")
-                    print("data: ", event.data)
+                    print(event.data)
+                    print("-" * 80)
+                    eventdata = json.loads(event.data)
+                    self.smokeco = eventdata["data"]["devices"]["smoke_co_alarms"]
+                    print(self.smokeco)
+                    # for sc in self.smokeco:
+                    #    print(sc)
+                    print("-" * 80)
+                    self.away = eventdata["data"]["structures"]
+                    print("AWAY:" + str(self.away))
+                    print("-" * 80)
                 elif event_type == 'keep-alive':
                     print("No data updates. Receiving an HTTP header to keep the connection open.")
                 elif event_type == 'auth_revoked':
@@ -250,10 +265,13 @@ class Nest_sse(Thread):
                 else:
                     print("Unknown event, no handler for it.")
             except Exception as e:
-                self.STATUS = -1
+                print(str(e))
                 if str(e) == "AUTH_ERROR":
                     self.STATUS = -2
-                self.MSG = str(e)
+                    logger.error(str(e))
+                else:
+                    self.STATUS = -1
+                    logger.warning(str(e))
 
 
 if __name__ == '__main__':
@@ -264,7 +282,7 @@ if __name__ == '__main__':
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
-    logger.info("Starting zenz.py ...")
+    logger.info("Starting zenz2.py ...")
     logger.info("GUCK_HOME on zenz server: " + GUCK_HOME)
 
     # Get Config from DB
@@ -283,16 +301,210 @@ if __name__ == '__main__':
     ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
                             GUCK_PATH, REMOTE_VIRTUALENV)
 
-    # Create the EventHandler and pass it your bot's token.
-    updater = Updater(TOKEN)
-    dp = updater.dispatcher
+    # Start Telegram bot
+    ''''UPDATER = Updater(TOKEN)
+    dp = UPDATER.dispatcher
     dp.add_handler(MessageHandler(Filters.text, chandler))
 
+    # Start Nest
+    logger.info("(Re)Connecting to NEST ...")
+    NESTSS = Nest_sse(NESTTOKEN, NEST_API_URL)
+    NESTSS.start()
+
+    # Ctrl+C Handler
     signal.signal(signal.SIGINT, sighandler)
     signal.signal(signal.SIGTERM, sighandler)
     signal.signal(signal.SIGABRT, sighandler)
 
-    updater.start_polling()
+    # Start Telegram
+    logger.info("Starting Telegram bot ...")
+    UPDATER.start_polling()
 
+    # Loop for threading
     while True:
-        time.sleep(0.5)
+        if NESTSS.STATUS == -1:
+            logger.info("(Re)Connecting to NEST ...")
+            sys.exit()
+            # NESTSS.start()
+        time.sleep(1)'''
+
+    eventdata = {
+        "path": "/",
+        "data": {
+            "devices": {
+                        "smoke_co_alarms": {
+                                "OLK-rC0gUkeZ9nH3no2m-iMePXBie9RS": {
+                                        "locale": "de-DE",
+                                        "structure_id": "f1iJ7Qyvwlr6dvj2MMhHl9VVSqYQ11gMpl1bfDYOESORRo7IkewcYw",
+                                        "software_version": "3.1.3rc2",
+                                        "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMZzpoeK5Bx1w",
+                                        "device_id": "OLK-rC0gUkeZ9nH3no2m-iMePXBie9RS",
+                                        "where_name": "Living Room",
+                                        "name": "Living Room",
+                                        "name_long": "Living Room Nest Protect",
+                                        "is_online": True,
+                                        "last_connection": "2018-01-04T15:26:06.053Z",
+                                        "battery_health": "ok",
+                                        "co_alarm_state": "ok",
+                                        "smoke_alarm_state": "ok",
+                                        "ui_color_state": "green",
+                                        "is_manual_test_active": False
+                                },
+                                "OLK-rC0gUkf5bPX_UWv5ZiMePXBie9RS": {
+                                        "locale": "de-DE",
+                                        "structure_id": "f1iJ7Qyvwlr6dvj2MMhHl9VVSqYQ11gMpl1bfDYOESORRo7IkewcYw",
+                                        "software_version": "3.1.3rc2",
+                                        "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNsCOyEoZWFVQ",
+                                        "device_id": "OLK-rC0gUkf5bPX_UWv5ZiMePXBie9RS",
+                                        "where_name": "Kitchen",
+                                        "name": "Kitchen",
+                                        "name_long": "Kitchen Nest Protect",
+                                        "is_online": True,
+                                        "last_connection": "2018-01-04T13:41:51.842Z",
+                                        "battery_health": "ok",
+                                        "co_alarm_state": "ok",
+                                        "smoke_alarm_state": "ok",
+                                        "ui_color_state": "green",
+                                        "is_manual_test_active": False,
+                                        "last_manual_test_time": "2017-11-18T15:25:15.000Z"
+                                },
+                                "OLK-rC0gUkeHck1ZRKWMTiMePXBie9RS": {
+                                        "locale": "de-DE",
+                                        "structure_id": "f1iJ7Qyvwlr6dvj2MMhHl9VVSqYQ11gMpl1bfDYOESORRo7IkewcYw",
+                                        "software_version": "3.1.3rc2",
+                                        "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMLwv6tlzXDSA",
+                                        "device_id": "OLK-rC0gUkeHck1ZRKWMTiMePXBie9RS",
+                                        "where_name": "Upstairs",
+                                        "name": "Upstairs",
+                                        "name_long": "Upstairs Nest Protect",
+                                        "is_online": False,
+                                        "last_connection": "2018-01-04T16:12:35.386Z",
+                                        "battery_health": "ok",
+                                        "co_alarm_state": "ok",
+                                        "smoke_alarm_state": "ok",
+                                        "ui_color_state": "green",
+                                        "is_manual_test_active": False
+                                }
+                        }
+                }, "structures": {
+                        "f1iJ7Qyvwlr6dvj2MMhHl9VVSqYQ11gMpl1bfDYOESORRo7IkewcYw": {
+                                "smoke_co_alarms": [
+                                        "OLK-rC0gUkeHck1ZRKWMTiMePXBie9RS",
+                                        "OLK-rC0gUkeZ9nH3no2m-iMePXBie9RS",
+                                        "OLK-rC0gUkf5bPX_UWv5ZiMePXBie9RS"
+                                ],
+                                "name": "Irenevalley",
+                                "country_code": "AT",
+                                "time_zone": "Europe/Vienna",
+                                "away": "home",
+                                "structure_id": "f1iJ7Qyvwlr6dvj2MMhHl9VVSqYQ11gMpl1bfDYOESORRo7IkewcYw",
+                                "co_alarm_state": "ok",
+                                "smoke_alarm_state": "ok",
+                                "wheres": {
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNO5B7v05qhmtg": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNO5B7v05qhmtg",
+                                                "name": "Backyard"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNOU_8peC6fWA": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNOU_8peC6fWA",
+                                                "name": "Basement"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPMpn3YgTC99g": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPMpn3YgTC99g",
+                                                "name": "Bedroom"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPORFC5S_Y9Bw": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPORFC5S_Y9Bw",
+                                                "name": "Den"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNzXJpniTwnTw": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNzXJpniTwnTw",
+                                                "name": "Dining Room"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNuPj2Hryy7pQ": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNuPj2Hryy7pQ",
+                                                "name": "Downstairs"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNO34JrAO8pyWQ": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNO34JrAO8pyWQ",
+                                                "name": "Driveway"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNcWYIXurQ5PQ": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNcWYIXurQ5PQ",
+                                                "name": "Entryway"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPhTEG5J2d0Ww": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPhTEG5J2d0Ww",
+                                                "name": "Family Room"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPHs3RyGDvR0w": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPHs3RyGDvR0w",
+                                                "name": "Front Yard"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPlZyat9nNWqA": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPlZyat9nNWqA",
+                                                "name": "Guest House"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNOAh5kWonxC_A": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNOAh5kWonxC_A",
+                                                "name": "Guest Room"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNN4Gx8Pytzc-A": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNN4Gx8Pytzc-A",
+                                                "name": "Hallway"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMRhAFGf17N0Q": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMRhAFGf17N0Q",
+                                                "name": "Kids Room"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNsCOyEoZWFVQ": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNsCOyEoZWFVQ",
+                                                "name": "Kitchen"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMZzpoeK5Bx1w": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMZzpoeK5Bx1w",
+                                                "name": "Living Room"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPTP47grpjSwA": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNPTP47grpjSwA",
+                                                "name": "Master Bedroom"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNwgKSVu80w2w": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNNwgKSVu80w2w",
+                                                "name": "Office"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMIjenwOROfKQ": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMIjenwOROfKQ",
+                                                "name": "Outside"
+                                        },
+                                        "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMLwv6tlzXDSA": {
+                                                "where_id": "-z_S_Jc8xjMzSAcosdUyxFKY9jMJvCsOAn7EILNVJNMLwv6tlzXDSA",
+                                                "name": "Upstairs"
+                                        }
+                                }
+                        }
+                }, "metadata": {
+                "access_token": "c.SMjBF19NuZ0Bm7ySJFf0nqyoMohWO2aXOL6u2Kjjx7REcylX3kiLRiYQrQlsP06cNvNf4QEJMiIcGZYkjcd8xlDXsajpwxWKUDgyFvniTefFPXcK8kKFA2ztde1BBGACcoa1dhhHIPcfAane",
+                "client_version": 3,
+                "user_id": "z.1.1.GptpHRlEQjK5qsF+jtF0jlk78dGteJtkXdOjSdv8Eyo="
+                }
+        }
+    }
+
+
+structures = eventdata["data"]["structures"]
+for key, s in structures.items():
+    print("Name:  " + s["name"])
+    print("away:  " + s["away"])
+    print("co2_alarm:  " + s["co_alarm_state"])
+    for location in s["smoke_co_alarms"]:
+        print("*" * 80)
+        s0 = eventdata["data"]["devices"]["smoke_co_alarms"][location]
+        print("Name: " + s0["name"])
+        print("CO2 Alarm: " + s0["co_alarm_state"])
+        print("Smoke Alarm: " + s0["smoke_alarm_state"])
+        print("Energy: " + s0["battery_health"])
+        
+    # print(key, s)
+    # for key1, s1 in s.items():
+    #    print(key1, s1)
