@@ -30,7 +30,7 @@ updater = None
 # NEST
 urllib3.disable_warnings()
 NEST_API_URL = "https://developer-api.nest.com"
-TOKEN = "c.SMjBF19NuZ0Bm7ySJFf0nqyoMohWO2aXOL6u2Kjjx7REcylX3kiLRiYQrQlsP06cNvNf4QEJMiIcGZYkjcd8xlDXsajpwxWKUDgyFvniTefFPXcK8kKFA2ztde1BBGACcoa1dhhHIPcfAane"
+TOKEN = "BLABLABLA"
 
 # try to get config & DB
 try:
