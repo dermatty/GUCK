@@ -25,6 +25,9 @@ from urllib.parse import urlparse
 import certifi
 from threading import Thread
 import json
+import zmq
+import dill
+import telepot
 
 UPDATER = None
 NESTSS = None
@@ -183,6 +186,42 @@ def sendtext_toGuck(msg, bot, update, host, port):
         return False
 
 
+class Zenz_connector(Thread):
+    def __init__(self, db, port="7014"):
+        Thread.__init__(self)
+        self.DB = db
+        try:
+            self.do_telegram = self.DB.db_query("telegram", "do_telegram")
+            self.telegram_token = self.DB.db_query("telegram", "token")
+            self.telegram_chatids = [int(x) for x in self.DB.db_query("telegram", "chatidlist")]
+            self.telegrambot = telepot.Bot(self.telegram_token)
+        except Exception as e:
+            logger.error("DB query error: " + str(e))
+            self.do_telegram = False
+        self.daemon = True
+        self.port = port
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REP)
+        self.socket.bind("tcp://*:" + self.port)
+
+    def run(self):
+        while True:
+            try:
+                msgtype, obj0 = self.socket.recv_pyobj()
+                if msgtype == "nest":
+                    print("Connector: nest update received")
+                    if self.do_telegram:
+                        for c in self.telegram_chatids:
+                            self.telegrambot.sendMessage(c, "Connector: nest update received")
+                self.socket.send_string("OK")
+            except Exception as e:
+                logger.error(str(e))
+                try:
+                    self.socket.send_string("NOOK")
+                except Exception as e:
+                    logger.error(str(e))
+
+
 class Nest_sse(Thread):
     def __init__(self, token, api_endpoint):
         Thread.__init__(self)
@@ -193,8 +232,32 @@ class Nest_sse(Thread):
         self.client = None
         self.NESTLIST = []
         self.OLDNESTLIST = []
-        self.STRUCUTRE_STATUS_CHANGED = []
+        self.STRUCTURE_STATUS_CHANGED = []
         self.DEVICE_STATUS_CHANGED = []
+
+    def send_to_connector(self, msgtype, obj0, port="7014"):
+        context = zmq.Context()
+        socket = context.socket(zmq.REQ)
+        host = "localhost"
+        socket.setsockopt(zmq.LINGER, 0)
+        socketurl = "tcp://" + host + ":" + port
+        socket.connect(socketurl)
+        print("-----------------------")
+        socket.RCVTIMEO = 1000
+        try:
+            socket.send_pyobj((msgtype, dill.dumps(obj0)))
+            oknok = socket.recv_string()
+            socket.close()
+            context.term()
+            print("Server returned: " + oknok)
+            return True
+        except zmq.ZMQError as e:
+            logger.error("Send to connector: " + str(e))
+            socket.close()
+            context.term()
+            time.sleep(0.1)
+            return False
+
 
     # compares NESTLIST to OLDNESTLIST and returns differences:
     #     "away" status per structure
@@ -230,12 +293,12 @@ class Nest_sse(Thread):
                             dsch.append((n1["name"], ln0["name"], "new_device", ""))
             if not locationfound:
                 statuschanged = True
-                ssch.append((n0["name"], "new_device", ""))
-        self.STRUCUTRE_STATUS_CHANGED = ssch
+                ssch.append((n0["name"], "new_structure", ""))
+        self.STRUCTURE_STATUS_CHANGED = ssch
         self.DEVICE_STATUS_CHANGED = dsch
         return statuschanged
 
-    def update_status(self, jsonstatus):
+    def update_status(self, eventdata):
         try:
             nestlist = []
             structures = eventdata["data"]["structures"]
@@ -257,10 +320,10 @@ class Nest_sse(Thread):
                 nestlist.append(structure)
             self.OLDNESTLIST = self.NESTLIST
             self.NESTLIST = nestlist
-            return 0
+            return True
         except Exception as e:
             logger.error(str(e))
-            return -1
+            return False
 
     def run(self):
         headers0 = {
@@ -311,18 +374,32 @@ class Nest_sse(Thread):
                 if event_type == 'open':  # not always received here
                     print("The event stream has been opened")
                 elif event_type == 'put':
-                    print(event.data)
-                    print("-" * 80)
                     eventdata = json.loads(event.data)
-                    
-                    self.smokeco = eventdata["data"]["devices"]["smoke_co_alarms"]
-                    print(self.smokeco)
-                    # for sc in self.smokeco:
-                    #    print(sc)
-                    print("-" * 80)
-                    self.away = eventdata["data"]["structures"]
-                    print("AWAY:" + str(self.away))
-                    print("-" * 80)
+                    if not self.update_status(eventdata):
+                        print("Error in reading nest event data ...")
+                    if self.check_status():
+                        print("NEST status has changed:")
+                        if self.STRUCTURE_STATUS_CHANGED != []:
+                            for ss0 in self.STRUCTURE_STATUS_CHANGED:
+                                nm, it, st = ss0
+                                print("Structure: " + nm)
+                                if it == "new_structure":
+                                    print("      New structure found")
+                                if it == "away":
+                                    print("      AWAY status changed to: " + st)
+                        if self.DEVICE_STATUS_CHANGED != []:
+                            for dd0 in self.DEVICE_STATUS_CHANGED:
+                                nm, lc, it, st = dd0
+                                print("Structure: " + nm)
+                                print("    Location: " + lc)
+                                if it == "co_alarm_state":
+                                    print("          CO2 state changed to:" + st)
+                                if it == "smoke_alarm_state":
+                                    print("          Smoke state changed to:" + st)
+                                if it == "battery_health":
+                                    print("          Energy state changed to:" + st)
+                    # send_to_connector(self, msgtype, obj0, port="7014"):
+                    self.send_to_connector("nest", (self.STRUCTURE_STATUS_CHANGED, self.DEVICE_STATUS_CHANGED))
                 elif event_type == 'keep-alive':
                     print("No data updates. Receiving an HTTP header to keep the connection open.")
                 elif event_type == 'auth_revoked':
@@ -342,7 +419,7 @@ class Nest_sse(Thread):
                     logger.error(str(e))
                 else:
                     self.STATUS = -1
-                    logger.warning(str(e))
+                    logger.warning("Nest loop:" + str(e))
 
 
 if __name__ == '__main__':
@@ -376,6 +453,10 @@ if __name__ == '__main__':
     UPDATER = Updater(TOKEN)
     dp = UPDATER.dispatcher
     dp.add_handler(MessageHandler(Filters.text, chandler))
+
+    # Start Connector
+    connector = Zenz_connector(DB)
+    connector.start()
 
     # Start Nest
     logger.info("(Re)Connecting to NEST ...")
