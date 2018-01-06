@@ -59,12 +59,12 @@ if _guck_home == -1:
         sys.exit()
 if _guck_home[-1] != "/":
         _guck_home += "/"
+
 # replace for ubuntuserver
 #guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs_neu/")
-# for ubuntuvm1
 
-#!!! guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
-guck_home = _guck_home
+# for ubuntuvm1
+guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
 
 #guck_home = _guck_home
 #print(guck_home)
