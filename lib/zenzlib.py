@@ -7,6 +7,27 @@ import time
 import dill
 
 
+class Connector:
+    def send_to_connector(self, msgtype, typ, obj0, host="localhost", port="7014"):
+        context = zmq.Context()
+        socket = context.socket(zmq.REQ)
+        socket.setsockopt(zmq.LINGER, 0)
+        socketurl = "tcp://" + host + ":" + port
+        socket.connect(socketurl)
+        socket.RCVTIMEO = 1000
+        try:
+            socket.send_pyobj((msgtype, typ, dill.dumps(obj0)))
+            oknok = socket.recv_string()
+            socket.close()
+            context.term()
+            return True, oknok
+        except zmq.ZMQError as e:
+            socket.close()
+            context.term()
+            time.sleep(0.1)
+            return False
+
+
 # waits for alarmphotos sent from guck
 class WastlAlarmClient:
 

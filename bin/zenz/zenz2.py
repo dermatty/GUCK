@@ -66,8 +66,7 @@ if _guck_home[-1] != "/":
 # for ubuntuvm1
 guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
 
-#guck_home = _guck_home
-#print(guck_home)
+# guck_home = _guck_home
 os.environ["GUCK_HOME"] = guck_home
 GUCK_HOME = os.environ["GUCK_HOME"]
 
@@ -94,6 +93,7 @@ def chandler(bot, update):
     global GUCK_PATH
     global REMOTE_VIRTUALENV
     global ZENZL
+    global CONNECTOR_AUX
     msg0 = update.message.text.lower()
     if msg0[:2] == "g.":
         if msg0[2:] == "stop" or msg0[2:] == "shutdown":
@@ -155,36 +155,13 @@ def chandler(bot, update):
     elif msg0[:5] == "nest.":
         logger.info("Received net msg:" + msg0)
         if msg0[5:] == "status":
-            global CONNECTOR
-            stat, txt = send_to_connector("nest", "getstatus", "")
+            stat, txt = CONNECTOR_AUX.send_to_connector("nest", "getstatus", "")
             if stat:
                 update.message.reply_text(txt)
             else:
                 update.message.reply_text("Cannot get NEST status")
     else:
         update.message.reply_text("Don't know what to do with: " + msg0)
-
-
-def send_to_connector(msgtype, typ, obj0, port="7014"):
-        context = zmq.Context()
-        socket = context.socket(zmq.REQ)
-        host = "localhost"
-        socket.setsockopt(zmq.LINGER, 0)
-        socketurl = "tcp://" + host + ":" + port
-        socket.connect(socketurl)
-        socket.RCVTIMEO = 1000
-        try:
-            socket.send_pyobj((msgtype, typ, dill.dumps(obj0)))
-            oknok = socket.recv_string()
-            socket.close()
-            context.term()
-            return True, oknok
-        except zmq.ZMQError as e:
-            logger.error("Send to connector: " + str(e))
-            socket.close()
-            context.term()
-            time.sleep(0.1)
-            return False
 
 
 def sendtext_toGuck(msg, bot, update, host, port):
@@ -255,9 +232,12 @@ class Zenz_connector(Thread):
         while True:
             try:
                 msgtype, typ, obj0 = self.socket.recv_pyobj()
-                # NEST handler
                 newmsg = None
-                if msgtype == "nest":
+                # GUCK Handler
+                if msgtype == "guck":
+                    pass
+                # NEST handler
+                elif msgtype == "nest":
                     # prepare text
                     if typ == "send":
                         status_changed, device_changed, nestlist = dill.loads(obj0)
@@ -291,6 +271,13 @@ class Zenz_connector(Thread):
                                 self.telegrambot.sendMessage(c, newmsg)
                         # server answer depends of msgtype
                         self.socket.send_string("OK")
+                    # return nest info for processing by wastl
+                    elif typ == "wastlinfo":
+                        stat, nestlist = self.get_data("nest")
+                        newmsg = "OIS OKAY"
+                        self.socket.send_string(newmsg)
+                        logger.info("String sent to WASTL!")
+                    # return fulltext status
                     elif typ == "getstatus":
                         stat, nestlist = self.get_data("nest")
                         newmsg = "*** NEST ***\n"
@@ -407,6 +394,8 @@ class Nest_sse(Thread):
             return False
 
     def run(self):
+        global ZENZL
+        global CONNECTOR_AUX
         headers0 = {
             'Authorization': "Bearer " + self.TOKEN,
             'Accept': 'text/event-stream'
@@ -459,7 +448,7 @@ class Nest_sse(Thread):
                     self.update_status(eventdata)
                     if self.check_status():
                         logger.info("Nest status has changed, communicating ...")
-                        send_to_connector("nest", "send", (self.STRUCTURE_STATUS_CHANGED, self.DEVICE_STATUS_CHANGED, self.NESTLIST))
+                        CONNECTOR_AUX.send_to_connector("nest", "send", (self.STRUCTURE_STATUS_CHANGED, self.DEVICE_STATUS_CHANGED, self.NESTLIST))
                 elif event_type == 'keep-alive':
                     pass
                 elif event_type == 'auth_revoked':
@@ -504,6 +493,8 @@ if __name__ == '__main__':
 
     ZENZL = zenzlib.ZenzLib(REMOTE_HOST, REMOTE_HOST_MAC, INTERFACE, REMOTE_PORT, REMOTE_HOST_SHORT, REMOTE_SSH_PORT,
                             GUCK_PATH, REMOTE_VIRTUALENV)
+
+    CONNECTOR_AUX = zenzlib.Connector()  # interface to connector
 
     # Start Telegram bot
     UPDATER = Updater(TOKEN)

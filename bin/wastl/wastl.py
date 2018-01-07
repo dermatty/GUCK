@@ -127,6 +127,7 @@ class PushThread(Thread):
         Thread.__init__(self)
         self.daemon = True
         self.was = zenzlib.WastlAlarmClient()
+        self.connector = zenzlib.Connector()
         self.app = app
         self.stop = True
         self.DB = DB0
@@ -140,6 +141,9 @@ class PushThread(Thread):
         o.long = self.DB.db_query("ephem", "long")
         sun = ephem.Sun()
         while True:
+            # NEST
+            # data = self.connector.send_to_connector("nest", "wastlinfo", "", host="ubuntuvm1.iv,at")
+            # GUCK
             sent = False
             stat, data, paused = self.was.get_from_guck()
             try:
