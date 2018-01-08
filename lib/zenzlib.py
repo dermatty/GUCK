@@ -14,9 +14,9 @@ class Connector:
         socket.setsockopt(zmq.LINGER, 0)
         socketurl = "tcp://" + host + ":" + port
         socket.connect(socketurl)
-        socket.RCVTIMEO = 1000
+        socket.RCVTIMEO = 300
+        socket.send_pyobj((msgtype, typ, dill.dumps(obj0)))
         try:
-            socket.send_pyobj((msgtype, typ, dill.dumps(obj0)))
             oknok = socket.recv_string()
             socket.close()
             context.term()
