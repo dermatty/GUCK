@@ -16,6 +16,7 @@ from threading import Thread
 import json
 import dill
 import time
+import signal
 
 
 class Nest_sse(Thread):
@@ -31,7 +32,7 @@ class Nest_sse(Thread):
         self.OLDNESTLIST = []
         self.STRUCTURE_STATUS_CHANGED = []
         self.DEVICE_STATUS_CHANGED = []
-        self.LASTKEEPALIVE =time.time()
+        self.LASTKEEPALIVE = time.time()
 
     # compares NESTLIST to OLDNESTLIST and returns differences:
     #     "away" status per structure
@@ -182,6 +183,7 @@ class Nest_sse(Thread):
                         logger.info("Nest status has changed, communicating ...")
                         CONNECTOR_AUX.send_to_connector("nest", "send", (self.STRUCTURE_STATUS_CHANGED, self.DEVICE_STATUS_CHANGED, self.NESTLIST))
                 elif event_type == 'keep-alive':
+                    logger.info("keep alive")
                     self.LASTKEEPALIVE = time.time()
                     pass
                 elif event_type == 'auth_revoked':
@@ -201,6 +203,7 @@ class Nest_sse(Thread):
 
 
 if __name__ == "__channelexec__":
+
     GUCK_HOME = os.environ["GUCK_HOME"]
     ln = "nestthread"
     logger = logging.getLogger(ln)

@@ -80,6 +80,8 @@ def sighandler(signum, frame):
     UPDATER.stop()
     logger.warning("NEST shutting down ...")
     gateway.exit()
+    logger.info("Zenz byebye!")
+    sys.exit()
 
 
 def send_to_guck(bot, update):
@@ -569,19 +571,24 @@ if __name__ == '__main__':
     # Loop for threading
     # while ZENZ_RUNNING and NESTSS.STATUS != -2:
     #    time.sleep(1)
+    logger.info("Entering ZENZ/NEST threading loop")
     while ZENZ_RUNNING:
         if neststatus == 1:
-            nestok = dill.loads(channel.receive())
+            try:
+                nestok = dill.loads(channel.receive())
+            except Exception as e:
+                # something awful has happened, kill nestsse
+                nestok = "OK"
+                neststatus = -1    # never try again
             if nestok == "NOOK":
                 i = 1
                 neststatus = -1
                 while i < 5 and neststatus == -1:
                     gateway.exit()
-                    time.sleep(1)
                     logger.info("Nest connection down, restarting via execnet ...")
+                    time.sleep(3)
                     gateway, channel, neststatus = start_nest_execnet(benv, bstr)
                     i += 1
-
         time.sleep(1)
 
 
