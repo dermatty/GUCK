@@ -28,6 +28,8 @@ import json
 import zmq
 import dill
 import telepot
+import execnet
+import nestthread
 
 UPDATER = None
 NESTSS = None
@@ -64,16 +66,20 @@ if _guck_home[-1] != "/":
 #guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs_neu/")
 
 # for ubuntuvm1
-guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
+# guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
 
-# guck_home = _guck_home
+guck_home = _guck_home
 os.environ["GUCK_HOME"] = guck_home
 GUCK_HOME = os.environ["GUCK_HOME"]
 
 
 def sighandler(signum, frame):
-    global NESTSS
-    NESTSS.STATUS = -2
+    global UPDATER
+    global gateway
+    logger.warning("Telegram shutting down ...")
+    UPDATER.stop()
+    logger.warning("NEST shutting down ...")
+    gateway.exit()
 
 
 def send_to_guck(bot, update):
@@ -306,10 +312,11 @@ class Zenz_connector(Thread):
             time.sleep(0.2)
 
 
-class Nest_sse(Thread):
+'''class Nest_sse(Thread):
     def __init__(self, token, api_endpoint):
         Thread.__init__(self)
         self.daemon = True
+        self.LAST_KEEPALIVE = time.time()
         self.TOKEN = token
         self.API_ENDPOINT = api_endpoint
         self.STATUS = 1
@@ -393,9 +400,7 @@ class Nest_sse(Thread):
             logger.error("Nest update: " + str(e))
             return False
 
-    def run(self):
-        global ZENZL
-        global CONNECTOR_AUX
+    def connect(self):
         headers0 = {
             'Authorization': "Bearer " + self.TOKEN,
             'Accept': 'text/event-stream'
@@ -413,29 +418,50 @@ class Nest_sse(Thread):
             conn.request("GET", "/", headers=headers)
             response = conn.getresponse()
             if response.status != 200:
-                self.STATUS = -2
                 logger.error("Cannot connect to NEST, redirect with non 200 response, aborting ...")
-                return
+                return False
             url = "https://" + redirectLocation.netloc
 
         http0 = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
         response = http0.request('GET', url, headers=headers0, preload_content=False)
 
         if response.status != 200:
-            self.STATUS = -2,
             logger.error("Cannot connect to redirected NEST, aborting ...")
-            return
+            return False
         try:
-            self.client = sseclient.SSEClient(response)
+            client = sseclient.SSEClient(response)
         except Exception as e:
-            self.STATUS = -2,
             logger.error(str(e))
+            return False
         logger.info("NEST: Connected to " + url)
-        self.STATUS = 1
-        logger.info("Waiting for NEST events ...")
+        return client
 
-        self.smokeco = None
-        self.away = None
+    def retry_connect(self, maxtry=10):
+        client = False
+        i = 1
+        while not client and i <= maxtry:
+            client = self.connect()
+            if client:
+                break
+            time.sleep(3)
+            i += 1
+        if client:
+            self.STATUS = 1
+        else:
+            self.STATUS = -2
+        return client
+
+    def run(self):
+        global ZENZL
+        global CONNECTOR_AUX
+
+        logger.info("Starting nest retry_connect")
+        self.client = self.retry_connect()
+        if self.STATUS == -2:
+            time.sleep(3)
+            return
+
+        logger.info("Waiting for NEST events ...")
 
         for event in self.client.events():  # returns a generator
             try:
@@ -464,7 +490,24 @@ class Nest_sse(Thread):
                     logger.error("Nest loop error: " + str(e))
                 else:
                     self.STATUS = -1
-                    logger.warning("Nest loop warning: " + str(e))
+                    logger.warning("Nest loop warning: " + str(e))'''
+
+
+def start_nest_execnet(benv, bstr):
+    global NESTTOKEN
+    global NEST_API_URL
+    print(bstr)
+    gateway = execnet.makegateway(bstr)
+    channel = gateway.remote_exec(nestthread)
+    channel.send(dill.dumps((NESTTOKEN, NEST_API_URL)))
+    ret0 = dill.loads(channel.receive())
+    if ret0 == "OK":
+        status = 1
+        logger.info("... done!")
+    else:
+        status = -1
+        logger.error("... failed!")
+    return gateway, channel, status
 
 
 if __name__ == '__main__':
@@ -506,9 +549,12 @@ if __name__ == '__main__':
     CONNECTOR.start()
 
     # Start Nest
-    logger.info("(Re)Connecting to NEST ...")
-    NESTSS = Nest_sse(NESTTOKEN, NEST_API_URL)
-    NESTSS.start()
+    logger.info("Starting NEST subprocess via execnet ...")
+    # NESTSS = Nest_sse(NESTTOKEN, NEST_API_URL)
+    # NESTSS.start()
+    benv = "/home/stephan/.virtualenvs/cvp0/bin/python"
+    bstr = "popen//python=" + benv
+    gateway, channel, neststatus = start_nest_execnet(benv, bstr)
 
     # Ctrl+C Handler
     signal.signal(signal.SIGINT, sighandler)
@@ -521,12 +567,28 @@ if __name__ == '__main__':
     UPDATER.start_polling()
 
     # Loop for threading
-    while ZENZ_RUNNING and NESTSS.STATUS != -2:
+    # while ZENZ_RUNNING and NESTSS.STATUS != -2:
+    #    time.sleep(1)
+    while ZENZ_RUNNING:
+        if neststatus == 1:
+            nestok = dill.loads(channel.receive())
+            if nestok == "NOOK":
+                i = 1
+                neststatus = -1
+                while i < 5 and neststatus == -1:
+                    gateway.exit()
+                    time.sleep(1)
+                    logger.info("Nest connection down, restarting via execnet ...")
+                    gateway, channel, neststatus = start_nest_execnet(benv, bstr)
+                    i += 1
+
         time.sleep(1)
+
 
     # The end is near ...
     logger.warning("Telegram shutting down ...")
     UPDATER.stop()
     logger.warning("NEST shutting down ...")
-    NESTSS.client.close()
+    gateway.exit()
+    # NESTSS.client.close()
     logger.warning("ZENZ ausmaus!!")
