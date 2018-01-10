@@ -236,6 +236,19 @@ class Zenz_connector(Thread):
         else:
             return -1, None
 
+    def send_tgrm(self, txt):
+        for c in self.telegram_chatids:
+            notsent = True
+            i = 1
+            while notsent and i < 5:
+                try:
+                    self.telegrambot.sendMessage(c, txt)
+                    notsent = False
+                except Exception as e:
+                    logger.error("Try #" + str(i) + ": cannot send Tgrm message - " + str(e))
+                    i += 1
+                    time.sleep(3)
+
     def run(self):
         while True:
             try:
@@ -274,9 +287,9 @@ class Zenz_connector(Thread):
                                     newmsg += "energy (" + st.upper() + ")\n"
                         self.DATALIST.append((msgtype, dill.dumps((status_changed, device_changed, nestlist))))
                         # send text to telegram, mail, ftp, sms etc
+                        
                         if self.do_telegram and newmsg:
-                            for c in self.telegram_chatids:
-                                self.telegrambot.sendMessage(c, newmsg)
+                            self.send_tgrm(newmsg)
                         # server answer depends of msgtype
                         self.socket.send_string("OK")
                     # return nest info for processing by wastl
@@ -498,7 +511,6 @@ class Zenz_connector(Thread):
 def start_nest_execnet(benv, bstr):
     global NESTTOKEN
     global NEST_API_URL
-    print(bstr)
     gateway = execnet.makegateway(bstr)
     channel = gateway.remote_exec(nestthread)
     channel.send(dill.dumps((NESTTOKEN, NEST_API_URL)))
