@@ -20,7 +20,7 @@ import signal
 
 
 class Nest_sse(Thread):
-    def __init__(self, token, api_endpoint):
+    def __init__(self, token, api_endpoint, msg):
         Thread.__init__(self)
         self.daemon = True
         self.LAST_KEEPALIVE = time.time()
@@ -33,6 +33,9 @@ class Nest_sse(Thread):
         self.STRUCTURE_STATUS_CHANGED = []
         self.DEVICE_STATUS_CHANGED = []
         self.LASTKEEPALIVE = time.time()
+        self.SHOWINITIALSTATUS = False
+        if msg.upper() == "STATUS":
+            self.SHOWINITIALSTATUS = True
 
     # compares NESTLIST to OLDNESTLIST and returns differences:
     #     "away" status per structure
@@ -170,13 +173,18 @@ class Nest_sse(Thread):
 
         logger.info("Waiting for NEST events ...")
 
+        msgcounter = 0
         for event in self.client.events():  # returns a generator
             try:
                 event_type = event.event
                 # print("event: ", event_type)
                 if event_type == 'open':  # not always received here
-                    print("The event stream has been opened")
+                    logger.info("The event stream has been opened")
                 elif event_type == 'put':
+                    # if status notfier for first msg is not requested -> continue
+                    if msgcounter == 0 and not self.SHOWINITIALSTATUS:
+                        msgcounter += 1
+                        continue
                     eventdata = json.loads(event.data)
                     self.update_status(eventdata)
                     if self.check_status():
@@ -184,7 +192,6 @@ class Nest_sse(Thread):
                         CONNECTOR_AUX.send_to_connector("nest", "send", (self.STRUCTURE_STATUS_CHANGED, self.DEVICE_STATUS_CHANGED, self.NESTLIST))
                 elif event_type == 'keep-alive':
                     logger.info("keep alive")
-                    self.LASTKEEPALIVE = time.time()
                     pass
                 elif event_type == 'auth_revoked':
                     # print("revoked token: ", event.data)
@@ -200,6 +207,8 @@ class Nest_sse(Thread):
                 else:
                     self.STATUS = -1
                     logger.warning("Nest loop warning: " + str(e))
+            msgcounter += 1
+            self.LASTKEEPALIVE = time.time()
 
 
 if __name__ == "__channelexec__":
@@ -215,16 +224,16 @@ if __name__ == "__channelexec__":
 
     CONNECTOR_AUX = zenzlib.Connector()
 
-    token, api_url = dill.loads(channel.receive())
+    token, api_url, msg = dill.loads(channel.receive())
     logger.info("Received NEST data")
-    NESTSS = Nest_sse(token, api_url)
+    NESTSS = Nest_sse(token, api_url, msg)
     NESTSS.start()
     if NESTSS.STATUS == -2:
         channel.send(dill.dumps("NOOK"))
     else:
         channel.send(dill.dumps("OK"))
     while NESTSS.STATUS != -2:
-        if time.time() - NESTSS.LASTKEEPALIVE > 65:
+        if time.time() - NESTSS.LASTKEEPALIVE > 120:
             ret0 = dill.dumps("NOOK")
         else:
             ret0 = dill.dumps("OK")

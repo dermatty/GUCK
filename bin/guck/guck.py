@@ -34,11 +34,38 @@ import configparser
 from Sunset import Sun
 from git import Repo
 import keras
+import tensorflow as tf
 from keras.utils import np_utils
+from keras_retinanet.models.resnet import custom_objects
+from keras_retinanet.utils.image import read_image_bgr, preprocess_image, resize_image
 
 
 __author__ = "Stephan Untergrabner"
 __license__ = "GPLv3"
+
+
+def get_session():
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    return tf.Session(config=config)
+
+
+def overlap_rects(r1, r2):
+    x11, y11, x12, y12 = r1
+    w = abs(x12 - x11)
+    h = abs(y12 - y11)
+    area1 = w * h
+    x21, y21, x22, y22 = r2
+    w = abs(x22 - x21)
+    h = abs(y22 - y21)
+    area2 = w * h
+    x_overlap = max(0, min(x12, x22) - max(x11, x21))
+    y_overlap = max(0, min(y12, y22) - max(y11, y21))
+    overlapArea = x_overlap * y_overlap
+    return overlapArea, overlapArea/area1, overlapArea/area2
+
+
+keras.backend.tensorflow_backend.set_session(get_session())
 
 # try to get config for DB
 try:
@@ -362,7 +389,14 @@ class GControl:
         except Exception as e:
             logger.warning(str(e) + ": cannot load CNN model, applying fallback to CV2 GPU, exiting ...")
             sys.exit()
-
+        self.RETINA_PATH = os.environ["GUCK_HOME"] + "data/cnn/resnet50_coco_30.h5"
+        try:
+            self.RETINAMODEL = keras.models.load_model(self.RETINA_PATH, custom_objects=custom_objects)
+            logger.info("Created Keras Retina model for people detection")
+        except Exception as e:
+            logger.warning(str(e) + ": cannot load retina model, setting it to None!")
+            self.RETINAMODEL = None
+            sys.exit()
         # cameras
         self.PTZ = {}
         self.REBOOT = {}
@@ -473,7 +507,7 @@ class GControl:
         if timedec > sunrise and timedec < sunset and self.NIGHTMODE:
             self.NIGHTMODE = False
             if self.CNNMODEL == "cnn":
-                self.HCLIMIT = 2
+                self.HCLIMIT = 1
             logger.info("Day comes, turning off Night Mode ...")
         self.SSHSERVER.set_hclimit(self.HCLIMIT)
         self.SSHSERVER.set_nightmode(self.NIGHTMODE)
@@ -571,9 +605,32 @@ class GControl:
                                     logger.info("1st pass: NOT SUFFICIENT with prob " + str(prob1_human) + "vs. threshold "
                                                 + str(prob1_faktor))
                         if classified:
-                            class_ai_lt = time.time()
-                            class_ai += 1
-                            logger.info("!! CLASSIFIED !!")
+                            found = True
+                            if self.RETINAMODEL:
+                                image = preprocess_image(frame)
+                                image, scale = resize_image(image)
+                                _, _, detections = self.RETINAMODEL.predict_on_batch(np.expand_dims(image, axis=0))
+                                predicted_labels = np.argmax(detections[0, :, 4:], axis=1)
+                                scores = detections[0, np.arange(detections.shape[1]), 4 + predicted_labels]
+                                detections[0, :, :4] /= scale
+                                found = False
+                                for idx, (label, score) in enumerate(zip(predicted_labels, scores)):
+                                    if label != 0 or score < 0.5:
+                                        continue
+                                    b = detections[0, idx, :4].astype(int)
+                                    r1 = (b[0], b[1], b[2], b[3])
+                                    x, y, w, h = rect
+                                    r2 = (x, y, x + w, y + h)
+                                    overlapArea, ratio1, ratio2 = overlap_rects(r1, r2)
+                                    if (ratio1 > 0.70 or ratio2 > 0.70):
+                                        print(" Human detected with score " + str(score) + " and overlap " + str(ratio1) + " / " + str(ratio2))
+                                        logger.info(" Human detected with score " + str(score) + " and overlap " + str(ratio1) + " / " + str(ratio2))
+                                        found = True
+                                        break
+                            if found:
+                                class_ai_lt = time.time()
+                                class_ai += 1
+                                logger.info("!! CLASSIFIED !!")
                         else:
                             class_ai = max(0, class_ai - 0.15)
                             logger.info("## not classified ##")

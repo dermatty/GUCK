@@ -66,9 +66,9 @@ if _guck_home[-1] != "/":
 #guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs_neu/")
 
 # for ubuntuvm1
-# guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
+guck_home = _guck_home.replace("/nfs/NFS_Projekte/", "/nfs/")
 
-guck_home = _guck_home
+# guck_home = _guck_home
 os.environ["GUCK_HOME"] = guck_home
 GUCK_HOME = os.environ["GUCK_HOME"]
 
@@ -508,12 +508,12 @@ class Zenz_connector(Thread):
                     logger.warning("Nest loop warning: " + str(e))'''
 
 
-def start_nest_execnet(benv, bstr):
+def start_nest_execnet(benv, bstr, msg=""):
     global NESTTOKEN
     global NEST_API_URL
     gateway = execnet.makegateway(bstr)
     channel = gateway.remote_exec(nestthread)
-    channel.send(dill.dumps((NESTTOKEN, NEST_API_URL)))
+    channel.send(dill.dumps((NESTTOKEN, NEST_API_URL, msg)))
     ret0 = dill.loads(channel.receive())
     if ret0 == "OK":
         status = 1
@@ -568,7 +568,7 @@ if __name__ == '__main__':
     # NESTSS.start()
     benv = "/home/stephan/.virtualenvs/cvp0/bin/python"
     bstr = "popen//python=" + benv
-    gateway, channel, neststatus = start_nest_execnet(benv, bstr)
+    gateway, channel, neststatus = start_nest_execnet(benv, bstr, msg="STATUS")
 
     # Ctrl+C Handler
     signal.signal(signal.SIGINT, sighandler)
