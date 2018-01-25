@@ -38,8 +38,8 @@ NESTSS = None
 try:
     dbconfig = configparser.ConfigParser()
     dbconfig.read("../../data/mongo_default/mongo_url.cfg")
-    dburl = dbconfig["CONFIG"]["DB_URL"].rstrip()
     dbname = dbconfig["CONFIG"]["DB_NAME"].rstrip()
+    dburl = dbconfig["CONFIG"]["DB_URL"].rstrip()
     DB = guckmongo.ConfigDB(dburl, dbname)
 except Exception as e:
     print(str(e) + ": Cannot get ZENZ config for DB, exiting ...")
