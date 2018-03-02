@@ -34,9 +34,24 @@
                 {{ hum }}%
             </div>
         </div>
-        <br>
         <hr>
-        <br>
+        {% for wan, host, ip, org in external_ips %}
+           <div class="row">
+               <div class="col-sm-2">
+                   <b>{{ wan }}</b>
+               </div>
+               <div class="col-sm-2">
+                   {{ ip }}
+               </div>
+               <div class="col-sm-2">
+                   {{ host }}
+               </div>
+               <div class="col-sm-2">
+                   ({{ org }})
+               </div>
+           </div>
+        {% endfor %}
+        <hr>
         <div class="row">
             <div class="col-sm-2">
                 <b>Address</b>

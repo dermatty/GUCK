@@ -955,8 +955,10 @@ def location():
     sunset = hh0 + ":" + min0 + "h"
     sunrise = hh1 + ":" + min1 + "h"
     temp, hum = ZENZL.get_sens_temp()
+    external_ips = ZENZL.get_external_ip()
     return render_template("location.html", temp=round(temp, 1), hum=round(hum, 1), sunrise=sunrise, sunset=sunset,
-                           location_name=location_name, location_long=location_long, location_lat=location_lat)
+                           location_name=location_name, location_long=location_long, location_lat=location_lat,
+                           external_ips=external_ips)
 
 
 # @app.route("/hue/<sel>/", defaults={"param1": "0"}, methods=['GET', 'POST'])

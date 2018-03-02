@@ -5,6 +5,7 @@ import paramiko
 import zmq
 import time
 import dill
+import json
 
 
 class Connector:
@@ -99,6 +100,22 @@ class ZenzLib:
             temp = temp / n
             hum = hum / n
         return temp, hum
+
+    def get_external_ip(self, hostlist=[("WAN_TMO", "ubuntuserver"), ("WAN_A1", "ubuntuvm2")]):
+        procstr = 'curl https://api.ipdata.co/"$(dig +short myip.opendns.com @resolver1.opendns.com)"'
+        resultlist = []
+        for gateway, hostn in hostlist:
+            try:
+                ssh = subprocess.Popen(["ssh", hostn, procstr], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
+                sshres = ssh.stdout.readlines()
+                s0 = ""
+                for ss in sshres:
+                    s0 += ss.decode("utf-8")
+                d = json.loads(s0)
+                resultlist.append((gateway, hostn, d["ip"], d["organisation"]))
+            except Exception as e:
+                resultlist.append((gateway, hostn, "N/A", "N/A"))
+        return resultlist
 
     def killguck(self):
         hostn = self.REMOTE_HOST_SHORT
