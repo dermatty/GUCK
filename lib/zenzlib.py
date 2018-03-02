@@ -6,6 +6,7 @@ import zmq
 import time
 import dill
 import json
+import requests
 
 
 class Connector:
@@ -101,9 +102,9 @@ class ZenzLib:
             hum = hum / n
         return temp, hum
 
-    def get_external_ip(self, hostlist=[("WAN_TMO", "ubuntuserver"), ("WAN_A1", "ubuntuvm2")]):
+    def get_external_ip(self, hostlist=[("WAN2TMO_DHCP", "ubuntuserver"), ("WAN_DHCP", "ubuntuvm2")]):
         procstr = 'curl https://api.ipdata.co/"$(dig +short myip.opendns.com @resolver1.opendns.com)"'
-        resultlist = []
+        iplist = []
         for gateway, hostn in hostlist:
             try:
                 ssh = subprocess.Popen(["ssh", hostn, procstr], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
@@ -112,10 +113,20 @@ class ZenzLib:
                 for ss in sshres:
                     s0 += ss.decode("utf-8")
                 d = json.loads(s0)
-                resultlist.append((gateway, hostn, d["ip"], d["organisation"]))
+                iplist.append((gateway, hostn, d["ip"], d["organisation"], "status", "N/A", "N/A", "N/A", "N/A"))
             except Exception as e:
-                resultlist.append((gateway, hostn, "N/A", "N/A"))
-        return resultlist
+                iplist.append((gateway, hostn, "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"))
+        try:
+            r = requests.get("https://pfsense.iv.at/status_gateways_json.php?key=pfsense", verify=False)
+            rjson = r.json()
+        except Exception as e:
+            rjson = {}
+        if rjson:
+            for i, (gateway, hostn, ip, org, _, _, _, _, _) in enumerate(iplist):
+                for key, item in rjson.items():
+                    if item["name"] == gateway:
+                        iplist[i] = (gateway, hostn, ip, org, item["status"], item["monitorip"], item["sourceip"], item["delay"], item["loss"])
+        return iplist
 
     def killguck(self):
         hostn = self.REMOTE_HOST_SHORT

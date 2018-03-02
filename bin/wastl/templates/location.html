@@ -35,19 +35,45 @@
             </div>
         </div>
         <hr>
-        {% for wan, host, ip, org in external_ips %}
+        <div class="row">
+            <div class="col-sm-2">
+                <b>Gateway</b>
+            </div>
+            <div class="col-sm-2">
+                <b>Status</b>
+            </div>
+            <div class="col-sm-2">
+                <b>Delay</b>
+            </div>
+            <div class="col-sm-2">
+                <b>Loss</b>
+            </div>
+            <div class="col-sm-2">
+                <b>Ext. IP</b>
+            </div>
+            <div class="col-sm-2">
+                <b>ISP</b>
+            </div>
+        </div>
+        {% for wan, host, ip, org, status, monitorip, sourceip, delay, loss in external_ips %}
            <div class="row">
                <div class="col-sm-2">
-                   <b>{{ wan }}</b>
+                   {{ wan }}
+               </div>
+               <div class="col-sm-2">
+                   {{ status }}
+               </div>
+               <div class="col-sm-2">
+                   {{ delay }}
+               </div>
+               <div class="col-sm-2">
+                   {{ loss }}
                </div>
                <div class="col-sm-2">
                    {{ ip }}
                </div>
                <div class="col-sm-2">
-                   {{ host }}
-               </div>
-               <div class="col-sm-2">
-                   ({{ org }})
+                   {{ org }}
                </div>
            </div>
         {% endfor %}
