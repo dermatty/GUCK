@@ -35,48 +35,30 @@
             </div>
         </div>
         <hr>
-        <div class="row">
-            <div class="col-sm-2">
-                <b>Gateway</b>
-            </div>
-            <div class="col-sm-2">
-                <b>Status</b>
-            </div>
-            <div class="col-sm-2">
-                <b>Delay</b>
-            </div>
-            <div class="col-sm-2">
-                <b>Loss</b>
-            </div>
-            <div class="col-sm-2">
-                <b>Ext. IP</b>
-            </div>
-            <div class="col-sm-2">
-                <b>ISP</b>
-            </div>
-        </div>
-        {% for wan, host, ip, org, status, monitorip, sourceip, delay, loss in external_ips %}
-           <div class="row">
-               <div class="col-sm-2">
-                   {{ wan }}
-               </div>
-               <div class="col-sm-2">
-                   {{ status }}
-               </div>
-               <div class="col-sm-2">
-                   {{ delay }}
-               </div>
-               <div class="col-sm-2">
-                   {{ loss }}
-               </div>
-               <div class="col-sm-2">
-                   {{ ip }}
-               </div>
-               <div class="col-sm-2">
-                   {{ org }}
-               </div>
-           </div>
-        {% endfor %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Gateway</th>
+                    <th>Status</th>
+                    <th>Delay</th>
+                    <th>Loss</th>
+                    <th>Ext.IP</th>
+                    <th>ISP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for wan, host, ip, org, status, monitorip, sourceip, delay, loss in external_ips %}
+                <tr>
+                    <td>{{ wan }}</td>
+                    <td>{{ status }}</td>
+                    <td>{{ delay }}</td>
+                    <td>{{ loss }}</td>
+                    <td>{{ ip }}</td>
+                    <td>{{ org }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         <hr>
         <div class="row">
             <div class="col-sm-2">
