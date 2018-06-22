@@ -104,6 +104,8 @@ class ZenzLib:
 
     def get_external_ip(self, hostlist=[("WAN2TMO_DHCP", "ubuntuserver"), ("WAN_DHCP", "ubuntuvm2")]):
         procstr = 'curl https://api.ipdata.co/"$(dig +short myip.opendns.com @resolver1.opendns.com)"'
+        procstr += "?api-key=b8d4413e71b0e5827c4624c856f0439ee6b64ff8a71c419bfcd2d14c"
+
         iplist = []
         for gateway, hostn in hostlist:
             try:
@@ -117,7 +119,7 @@ class ZenzLib:
             except Exception as e:
                 iplist.append((gateway, hostn, "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"))
         try:
-            r = requests.get("https://pfsense.iv.at/status_gateways_json.php?key=pfsense", verify=False)
+            r = requests.get("http://pfsense.iv.at/status_gateways_json.php?key=pfsense", verify=False)
             rjson = r.json()
         except Exception as e:
             rjson = {}
