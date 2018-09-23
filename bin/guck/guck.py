@@ -36,6 +36,7 @@ from git import Repo
 import keras
 import tensorflow as tf
 from keras.utils import np_utils
+# import keras_retinanet
 from keras_retinanet.models.resnet import custom_objects
 from keras_retinanet.utils.image import read_image_bgr, preprocess_image, resize_image
 
