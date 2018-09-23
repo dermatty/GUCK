@@ -37,7 +37,8 @@ import keras
 import tensorflow as tf
 from keras.utils import np_utils
 # import keras_retinanet
-from keras_retinanet.models.resnet import custom_objects
+from keras_retinanet import models
+# from keras_retinanet.models.resnet import custom_objects
 from keras_retinanet.utils.image import read_image_bgr, preprocess_image, resize_image
 
 
@@ -390,9 +391,10 @@ class GControl:
         except Exception as e:
             logger.warning(str(e) + ": cannot load CNN model, applying fallback to CV2 GPU, exiting ...")
             sys.exit()
-        self.RETINA_PATH = os.environ["GUCK_HOME"] + "data/cnn/resnet50_coco_30.h5"
+        self.RETINA_PATH = os.environ["GUCK_HOME"] + "data/cnn/resnet50_coco_best_v2.1.0.h5"
         try:
-            self.RETINAMODEL = keras.models.load_model(self.RETINA_PATH, custom_objects=custom_objects)
+            self.RETINAMODEL = models.load_model(self.RETINA_PATH, backbone_name='resnet50')
+            # self.RETINAMODEL = keras.models.load_model(self.RETINA_PATH, custom_objects=custom_objects)
             logger.info("Created Keras Retina model for people detection")
         except Exception as e:
             logger.warning(str(e) + ": cannot load retina model, setting it to None!")
@@ -610,21 +612,21 @@ class GControl:
                             if self.RETINAMODEL:
                                 image = preprocess_image(frame)
                                 image, scale = resize_image(image)
-                                _, _, detections = self.RETINAMODEL.predict_on_batch(np.expand_dims(image, axis=0))
-                                predicted_labels = np.argmax(detections[0, :, 4:], axis=1)
-                                scores = detections[0, np.arange(detections.shape[1]), 4 + predicted_labels]
-                                detections[0, :, :4] /= scale
+                                pred_boxes, pred_scores, pred_labels = self.RETINAMODEL.predict_on_batch(np.expand_dims(image, axis=0))
+                                # print("--> predicted!")
+                                pred_boxes /= scale
                                 found = False
-                                for idx, (label, score) in enumerate(zip(predicted_labels, scores)):
+                                for box, score, label in zip(pred_boxes[0], pred_scores[0], pred_labels[0]):
+                                    # print("--> ", label, score)
                                     if label != 0 or score < 0.5:
                                         continue
-                                    b = detections[0, idx, :4].astype(int)
+                                    b = box.astype(int)
                                     r1 = (b[0], b[1], b[2], b[3])
                                     x, y, w, h = rect
                                     r2 = (x, y, x + w, y + h)
                                     overlapArea, ratio1, ratio2 = overlap_rects(r1, r2)
                                     if (ratio1 > 0.70 or ratio2 > 0.70):
-                                        print(" Human detected with score " + str(score) + " and overlap " + str(ratio1) + " / " + str(ratio2))
+                                        # print(" Human detected with score " + str(score) + " and overlap " + str(ratio1) + " / " + str(ratio2))
                                         logger.info(" Human detected with score " + str(score) + " and overlap " + str(ratio1) + " / " + str(ratio2))
                                         found = True
                                         break
@@ -939,6 +941,8 @@ class GControl:
                         shmlist[i] = camlist[i]
                         frame0copy = frame0.copy()
                         humancount = len([o for o in objlist if o[2] > self.HCLIMIT])
+                        if humancount > 0:
+                            print("*** humancount: ", humancount)
                         # Draw detection
                         for o in objlist:
                             o_id, o_rect, o_class_ai, _ = o
@@ -1010,6 +1014,7 @@ class GControl:
 
                         # wastl
                         if (humancount >= self.HCLIMIT and tx0 - self.LASTWASTL >= self.MAXT_TELEGRAM):
+                            print("WASTL sent!")
                             tm = time.strftime("%a, %d %b %Y %H:%M:%S")
                             self.WAS.push((frame0, tm))
                             self.LASTWASTL = tx0
@@ -1017,13 +1022,14 @@ class GControl:
                         # Telegram
                         if (humancount >= self.HCLIMIT) and self.DO_TELEGRAM and self.TELEGRAMBOT and\
                            self.TELEGRAM_MODE == "verbose" and tx0-self.LASTTELEGRAM >= self.MAXT_TELEGRAM:
-                                cv2.imwrite("alarmphoto.jpg", frame0)
-                                msg = str(humancount) + " human(s) detected!"
-                                self.SENDMSG.sendtext("telegram", None, msg, None)
-                                self.SENDMSG.sendphoto("telegram", None, "alarmphoto.jpg", None)
-                                tm = time.strftime("%a, %d %b %Y %H:%M:%S")
-                                logger.info("Telegramm msg. sent at " + tm)
-                                self.LASTTELEGRAM = tx0    # time.time()
+                            print("**** Telegram sent")
+                            cv2.imwrite("alarmphoto.jpg", frame0)
+                            msg = str(humancount) + " human(s) detected!"
+                            self.SENDMSG.sendtext("telegram", None, msg, None)
+                            self.SENDMSG.sendphoto("telegram", None, "alarmphoto.jpg", None)
+                            tm = time.strftime("%a, %d %b %Y %H:%M:%S")
+                            logger.info("Telegramm msg. sent at " + tm)
+                            self.LASTTELEGRAM = tx0    # time.time()
 
                         # photo
                         if (humancount >= self.HCLIMIT) and self.DO_PHOTO and time.time()-self.LASTPHOTO >= self.MAXT_DETECTPHOTO:
