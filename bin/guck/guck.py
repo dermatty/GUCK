@@ -941,8 +941,6 @@ class GControl:
                         shmlist[i] = camlist[i]
                         frame0copy = frame0.copy()
                         humancount = len([o for o in objlist if o[2] > self.HCLIMIT])
-                        if humancount > 0:
-                            print("*** humancount: ", humancount)
                         # Draw detection
                         for o in objlist:
                             o_id, o_rect, o_class_ai, _ = o

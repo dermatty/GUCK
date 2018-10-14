@@ -486,7 +486,7 @@ def guck(menu1, param1):
         # just one photo or all?
         cursor = DB.db_getall("cameras")
         nr_cameras = len([(cn["_id"], cn["name"], cn["enable"]) for cn in cursor])
-        print("# cameras:", nr_cameras)
+        # print("# cameras:", nr_cameras)
         if int(param1) < nr_cameras:
             lowerbound = upperbound = int(param1)
         else:

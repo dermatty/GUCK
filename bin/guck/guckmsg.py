@@ -9,7 +9,7 @@ from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.image import MIMEImage
 import queue, cv2, requests, posix_ipc
-import telepot , sensors, logging
+import telepot, sensors, logging
 import os
 import dill
 
