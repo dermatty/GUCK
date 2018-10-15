@@ -940,7 +940,7 @@ class GControl:
                     if self.CAMERADATA[i].STATUS == 2 and camname is not None:
                         shmlist[i] = camlist[i]
                         frame0copy = frame0.copy()
-                        humancount = len([o for o in objlist if o[2] > self.HCLIMIT])
+                        humancount = len([o for o in objlist if o[2] >= self.HCLIMIT])
                         # Draw detection
                         for o in objlist:
                             o_id, o_rect, o_class_ai, _ = o
@@ -1012,7 +1012,6 @@ class GControl:
 
                         # wastl
                         if (humancount >= self.HCLIMIT and tx0 - self.LASTWASTL >= self.MAXT_TELEGRAM):
-                            print("WASTL sent!")
                             tm = time.strftime("%a, %d %b %Y %H:%M:%S")
                             self.WAS.push((frame0, tm))
                             self.LASTWASTL = tx0
@@ -1020,7 +1019,6 @@ class GControl:
                         # Telegram
                         if (humancount >= self.HCLIMIT) and self.DO_TELEGRAM and self.TELEGRAMBOT and\
                            self.TELEGRAM_MODE == "verbose" and tx0-self.LASTTELEGRAM >= self.MAXT_TELEGRAM:
-                            print("**** Telegram sent")
                             cv2.imwrite("alarmphoto.jpg", frame0)
                             msg = str(humancount) + " human(s) detected!"
                             self.SENDMSG.sendtext("telegram", None, msg, None)
