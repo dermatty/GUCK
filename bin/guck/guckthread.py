@@ -124,7 +124,10 @@ class Matcher:
             fggray = cv2.medianBlur(fggray, 5)
             edged = auto_canny(fggray)
             closed = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, self.KERNEL2)
-            _, cnts, _ = cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if cv2.__version__ == "4.0.0":
+                cnts, _ = cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            else:
+                _, cnts, _ = cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             cnts0 = [cv2.boundingRect(c) for c in cnts]
             rects = [(x, y, w, h) for x, y, w, h in cnts0 if w * h > self.MINAREA]
 
@@ -391,7 +394,10 @@ if __name__ == "__channelexec__":
                     logger.info("Set MOG2 sensitivity to " + str(int(mogsens)))
                 else:
                     logger.warning("Cannot set MOG2 sensitivity in cam thread!")
-            ret, detections, frame = tm.getcaptionandprocess()
+            try:
+                ret, detections, frame = tm.getcaptionandprocess()
+            except Exception as e:
+                logger.error("getcaption error: " + str(e))
             if ret:
                 lasttt = time.time()
                 detectionlist = tm.process_detections(frame, detections)
