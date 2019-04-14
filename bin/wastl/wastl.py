@@ -49,7 +49,7 @@ HUE = huelib.Hue()
 app = Flask(__name__)
 app.secret_key = "dfdsmdsv11nmDFSDfds"
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config["REDIS_URL"] = "redis://ubuntuvm1.iv.at"
+app.config["REDIS_URL"] = "redis://etec.iv.at"
 app.register_blueprint(sse, url_prefix='/stream')
 Session(app)
 

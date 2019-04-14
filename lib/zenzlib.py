@@ -7,7 +7,7 @@ import time
 import dill
 import json
 import requests
-
+import sys
 
 class Connector:
     def send_to_connector(self, msgtype, typ, obj0, host="localhost", port="7014"):
@@ -102,7 +102,7 @@ class ZenzLib:
             hum = hum / n
         return temp, hum
 
-    def get_external_ip(self, hostlist=[("WAN2TMO_DHCP", "ubuntuserver"), ("WAN_DHCP", "ubuntuvm2")]):
+    def get_external_ip(self, hostlist=[("WAN2TMO_DHCP", "raspisens"), ("WAN_DHCP", "etec")]):
         procstr = 'curl https://api.ipdata.co/"$(dig +short myip.opendns.com @resolver1.opendns.com)"'
         procstr += "?api-key=b8d4413e71b0e5827c4624c856f0439ee6b64ff8a71c419bfcd2d14c"
 
@@ -131,15 +131,12 @@ class ZenzLib:
         return iplist
 
     def killguck(self):
-        hostn = self.REMOTE_HOST_SHORT
+        hostn = self.REMOTE_HOST_SHORT + " -p " + self.REMOTE_SSH_PORT
         etec_cmd1 = self.REMOTE_VIRTUALENV + " " + self.GUCK_PATH + "guck.py"
-        etec_killstr2 = self.REMOTE_VIRTUALENV + " -u -c import sys;exec(eval(sys.stdin.readline()))"
-        killstr = "ssh " + hostn + " killall -9e " + "'" + etec_cmd1 + "'"
-        killstr2 = "ssh " + hostn + " killall -9e " + "'" + etec_killstr2 + "'"
+        killstr = "/usr/bin/pkill -9 -f '" + etec_cmd1 + "'"
         try:
-            os.system(killstr)
-            os.system(killstr2)
-        except:
+            subprocess.call("ssh " + hostn + " " + chr(34) + killstr + chr(34), shell=True)
+        except Exception:
             pass
 
     def shutdown(self):
@@ -193,15 +190,17 @@ class ZenzLib:
         sshres = ssh.stdout.readlines()
         try:
             noservers = int(sshres[0].decode("utf-8"))-2
+            
         except:
             noservers = 0
         return noservers
 
     def startguck(self):
         etec_cmd00 = "nohup " + self.GUCK_PATH + "../../scripts/startguck.sh"
-        print(etec_cmd00)
-        ssh = SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(self.REMOTE_HOST_SHORT, port=int(self.REMOTE_SSH_PORT))
-        stdin, stdout, stderr = ssh.exec_command(etec_cmd00 + " > " + self.GUCK_PATH + "../../log/gucklog.log 2>&1 &")
-        print(stderr)
+        try:
+            ssh = SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(self.REMOTE_HOST_SHORT, port=int(self.REMOTE_SSH_PORT))
+            stdin, stdout, stderr = ssh.exec_command(etec_cmd00 + " > " + self.GUCK_PATH + "../../log/gucklog.log 2>&1 &")
+        except Exception as e:
+            print(str(e))

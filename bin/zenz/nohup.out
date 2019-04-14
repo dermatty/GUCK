@@ -1,0 +1,42 @@
+2019-04-13 16:36:26.915320: E tensorflow/stream_executor/cuda/cuda_driver.cc:300] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2019-04-13 16:36:26.915347: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:163] retrieving CUDA diagnostic information for host: etec
+2019-04-13 16:36:26.915351: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:170] hostname: etec
+2019-04-13 16:36:26.915382: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:194] libcuda reported version is: 418.56.0
+2019-04-13 16:36:26.915396: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:198] kernel reported version is: 418.43.0
+2019-04-13 16:36:26.915400: E tensorflow/stream_executor/cuda/cuda_diagnostics.cc:308] kernel version 418.43.0 does not match DSO version 418.56.0 -- cannot find working devices in this configuration
+2019-04-13 16:37:52.687693: E tensorflow/stream_executor/cuda/cuda_driver.cc:300] failed call to cuInit: CUDA_ERROR_NO_DEVICE: no CUDA-capable device is detected
+2019-04-13 16:37:52.687717: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:163] retrieving CUDA diagnostic information for host: etec
+2019-04-13 16:37:52.687721: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:170] hostname: etec
+2019-04-13 16:37:52.687752: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:194] libcuda reported version is: 418.56.0
+2019-04-13 16:37:52.687767: I tensorflow/stream_executor/cuda/cuda_diagnostics.cc:198] kernel reported version is: 418.43.0
+2019-04-13 16:37:52.687771: E tensorflow/stream_executor/cuda/cuda_diagnostics.cc:308] kernel version 418.43.0 does not match DSO version 418.56.0 -- cannot find working devices in this configuration
+Using TensorFlow backend.
+[ INFO:0] Initialize OpenCL runtime...
+Traceback (most recent call last):
+  File "/media/nfs/development/GIT/GUCK/bin/guck/guck.py", line 1144, in <module>
+    gc = GControl(_DB)
+  File "/media/nfs/development/GIT/GUCK/bin/guck/guck.py", line 388, in __init__
+    self.CNNMODEL2 = keras.models.load_model(self.CNN_PATH2)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/keras/engine/saving.py", line 419, in load_model
+    model = _deserialize_model(f, custom_objects, compile)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/keras/engine/saving.py", line 325, in _deserialize_model
+    model.optimizer.set_weights(optimizer_weight_values)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/keras/optimizers.py", line 126, in set_weights
+    param_values = K.batch_get_value(params)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/keras/backend/tensorflow_backend.py", line 2420, in batch_get_value
+    return get_session().run(ops)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/keras/backend/tensorflow_backend.py", line 206, in get_session
+    session.run(tf.variables_initializer(uninitialized_vars))
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 887, in run
+    run_metadata_ptr)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1110, in _run
+    feed_dict_tensor, options, run_metadata)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1286, in _do_run
+    run_metadata)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1292, in _do_call
+    return fn(*args)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1277, in _run_fn
+    options, feed_dict, fetch_list, target_list, run_metadata)
+  File "/home/stephan/.virtualenvs/cvp0/lib/python3.6/site-packages/tensorflow/python/client/session.py", line 1367, in _call_tf_sessionrun
+    run_metadata)
+KeyboardInterrupt

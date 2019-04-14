@@ -1,4 +1,4 @@
-cd /media/nfs/NFS_Projekte/GIT/GUCK/bin/guck
+cd /media/nfs/development/GIT/GUCK/bin/guck
 OS=$(cat /etc/os-release | sed '2q;d')
 
 if [ "$OS" == "ID=ubuntu" ]; then
@@ -39,7 +39,7 @@ if [ "$OS" == "ID=gentoo" ]; then
         export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 fi
 
-/home/stephan/.virtualenvs/cvp0/bin/python /media/nfs/NFS_Projekte/GIT/GUCK/bin/guck/guck.py
+/home/stephan/.virtualenvs/cvp0/bin/python /media/nfs/development/GIT/GUCK/bin/guck/guck.py
 
 
 
