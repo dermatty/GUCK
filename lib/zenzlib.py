@@ -109,6 +109,7 @@ class ZenzLib:
         iplist = []
         for gateway, hostn in hostlist:
             try:
+                print(hostn)
                 ssh = subprocess.Popen(["ssh", hostn, procstr], shell=False, stdout=subprocess.PIPE, stderr=subprocess. PIPE)
                 sshres = ssh.stdout.readlines()
                 s0 = ""
@@ -117,9 +118,11 @@ class ZenzLib:
                 d = json.loads(s0)
                 iplist.append((gateway, hostn, d["ip"], d["organisation"], "status", "N/A", "N/A", "N/A", "N/A"))
             except Exception as e:
+                print(str(e))
                 iplist.append((gateway, hostn, "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"))
+        print("#2")
         try:
-            r = requests.get("http://pfsense.iv.at/status_gateways_json.php?key=pfsense", verify=False)
+            r = requests.get("http://pfsense.iv.at:18080/status_gateways_json.php?key=pfsense", verify=False)
             rjson = r.json()
         except Exception as e:
             rjson = {}
