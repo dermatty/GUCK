@@ -103,8 +103,9 @@ class ZenzLib:
         return temp, hum
 
     def get_external_ip(self, hostlist=[("WAN2TMO_DHCP", "raspisens"), ("WAN_DHCP", "etec")]):
-        procstr = 'curl https://api.ipdata.co/"$(dig +short myip.opendns.com @resolver1.opendns.com)"'
-        procstr += "?api-key=b8d4413e71b0e5827c4624c856f0439ee6b64ff8a71c419bfcd2d14c"
+        # procstr = 'curl https://api.ipdata.co/"$(dig +short myip.opendns.com @resolver1.opendns.com)"'
+        procstr = "curl https://api.ipdata.co/?api-key=b8d4413e71b0e5827c4624c856f0439ee6b64ff8a71c419bfcd2d14c"
+        # procstr += "?api-key=b8d4413e71b0e5827c4624c856f0439ee6b64ff8a71c419bfcd2d14c"
 
         iplist = []
         for gateway, hostn in hostlist:
@@ -115,7 +116,7 @@ class ZenzLib:
                 for ss in sshres:
                     s0 += ss.decode("utf-8")
                 d = json.loads(s0)
-                iplist.append((gateway, hostn, d["ip"], d["organisation"], "status", "N/A", "N/A", "N/A", "N/A"))
+                iplist.append((gateway, hostn, d["ip"], d["asn"]["name"], "status", "N/A", "N/A", "N/A", "N/A"))
             except Exception as e:
                 print(str(e))
                 iplist.append((gateway, hostn, "N/A", "N/A", "N/A", "N/A", "N/A", "N/A", "N/A"))

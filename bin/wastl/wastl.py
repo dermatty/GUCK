@@ -333,8 +333,8 @@ def index():
     return render_template("index.html", userauth=flask_login.current_user.is_authenticated)
 
 
-@app.route('/video_feed/<camnr>/', defaults={"interval": 5})
-@app.route('/video_feed/<camnr>/<interval>/')
+@app.route('/video_feed/<camnr>', defaults={"interval": 5})
+@app.route('/video_feed/<camnr>/<interval>')
 def video_feed(camnr, interval=5):
     global gen0
     try:
@@ -347,10 +347,10 @@ def video_feed(camnr, interval=5):
 
 
 # hier noch fullscreen!
-@app.route("/livecam/", defaults={"camnrstr": 0, "interval": 2, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/", defaults={"interval": 2, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/<interval>/", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
-@app.route("/livecam/<camnrstr>/<interval>/<toggle>/", defaults={"ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam", defaults={"camnrstr": 0, "interval": 2, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>", defaults={"interval": 2, "toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/<interval>", defaults={"toggle": 0, "ptz": 0}, methods=['GET', 'POST'])
+@app.route("/livecam/<camnrstr>/<interval>/<toggle>", defaults={"ptz": 0}, methods=['GET', 'POST'])
 @app.route("/livecam/<camnrstr>/<interval>/<toggle>/<ptz>", methods=['GET', 'POST'])
 @flask_login.login_required
 def livecam(camnrstr=0, interval=2, toggle=0, ptz=0):
@@ -456,7 +456,7 @@ def detections():
     return render_template("detections.html", detlist=detlist)
 
 
-@app.route("/guck/<menu1>/", defaults={"param1": "0"}, methods=['GET', 'POST'])
+@app.route("/guck/<menu1>", defaults={"param1": "0"}, methods=['GET', 'POST'])
 @app.route("/guck/<menu1>/<param1>", methods=['GET', 'POST'])
 @flask_login.login_required
 def guck(menu1, param1):
@@ -934,7 +934,7 @@ def get_geo_timestr():
     return "(" + hh0 + ":" + min0 + "h - " + hh1 + ":" + min1 + "h)"
 
 
-@app.route("/location/", methods=['GET', 'POST'])
+@app.route("/location", methods=['GET', 'POST'])
 @flask_login.login_required
 def location():
     global DB
@@ -962,8 +962,8 @@ def location():
 
 
 # @app.route("/hue/<sel>/", defaults={"param1": "0"}, methods=['GET', 'POST'])
-@app.route("/hue/", defaults={"selected_s": "0"}, methods=['GET', 'POST'])
-@app.route("/hue/<selected_s>/", methods=['GET', 'POST'])
+@app.route("/hue", defaults={"selected_s": "0"}, methods=['GET', 'POST'])
+@app.route("/hue/<selected_s>", methods=['GET', 'POST'])
 @flask_login.login_required
 def hue(selected_s="0"):
     global HUE
