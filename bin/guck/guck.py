@@ -45,6 +45,8 @@ from keras_retinanet.utils.image import read_image_bgr, preprocess_image, resize
 __author__ = "Stephan Untergrabner"
 __license__ = "GPLv3"
 
+tfversion = tf.__version__
+
 
 def get_session():
     config = tf.ConfigProto()
@@ -67,7 +69,7 @@ def overlap_rects(r1, r2):
     return overlapArea, overlapArea/area1, overlapArea/area2
 
 
-keras.backend.tensorflow_backend.set_session(get_session())
+# keras.backend.tensorflow_backend.set_session(get_session())
 
 # try to get config for DB
 try:
