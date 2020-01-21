@@ -59,7 +59,7 @@ telepot==12.3
 terminaltables==3.1.0
 Theano==1.0.3
 urllib3==1.23
-validators==0.12.2
+validators==0.12.6
 Werkzeug==0.14.1
 WTForms==2.2.1
 WTForms-Components==0.10.3
