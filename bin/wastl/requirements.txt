@@ -37,7 +37,7 @@ packaging==18.0
 paramiko==2.4.2
 pip-upgrader==1.4.6
 posix-ipc==1.0.4
-psutil==5.4.7
+psutil==5.6.6
 pyasn1==0.4.4
 pycparser==2.19
 pyephem==3.7.6.0
