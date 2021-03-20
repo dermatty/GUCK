@@ -29,7 +29,7 @@ idna==2.7
 infinity==1.4
 intervals==0.8.1
 itsdangerous==0.24
-Jinja2==2.10
+Jinja2==2.11.3
 MarkupSafe==1.0
 multidict==4.4.2
 numpy==1.15.2
