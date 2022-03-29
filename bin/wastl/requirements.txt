@@ -34,7 +34,7 @@ MarkupSafe==1.0
 multidict==4.4.2
 numpy==1.15.2
 packaging==18.0
-paramiko==2.4.2
+paramiko==2.10.1
 pip-upgrader==1.4.6
 posix-ipc==1.0.4
 psutil==5.4.7
